@@ -124,48 +124,39 @@ Built with **xarray** for multidimensional climate data processing, **pvlib** fo
 
 ## Architecture
 
-```mermaid
-graph TD
-    subgraph UI["Panel Dashboard"]
-        direction LR
-        W1["Location Input"]
-        W2["Simulation Controls"]
-        W3["Charts & Maps"]
-        W4["AI Chat"]
-    end
-
-    subgraph PIPELINE["Lumen Pipeline Layer"]
-        direction LR
-        SDS["SolarDataSource"] --> TF["Transforms"] --> VW["Views"]
-    end
-
-    subgraph CORE["Core Engine"]
-        direction LR
-        DL["Data Loader\n(xarray)"]
-        SA["Solar Analysis\n(pvlib)"]
-        EE["Energy Estimator\n(formulas)"]
-        OS["Orientation Sim\n(pvlib + numpy)"]
-        FA["Financial Analyzer\n(NPV / ROI)"]
-        AI["AI Engine\n(GPT-4o-mini)"]
-    end
-
-    subgraph DATA["Scientific Data Sources"]
-        direction LR
-        NASA["NASA POWER API"]
-        ERA5["ERA5 / Copernicus CDS"]
-        NC["NetCDF / Zarr"]
-        CS["pvlib Clearsky"]
-    end
-
-    UI --> PIPELINE
-    PIPELINE --> CORE
-    CORE --> DATA
-
-    style UI fill:#F7931E,stroke:#e07800,color:#fff,font-weight:bold
-    style PIPELINE fill:#4B8BBE,stroke:#3a6f99,color:#fff,font-weight:bold
-    style CORE fill:#306998,stroke:#1e4f6e,color:#fff,font-weight:bold
-    style DATA fill:#0033A0,stroke:#002070,color:#fff,font-weight:bold
-```
+<table>
+<tr>
+<td colspan="6" align="center"><strong>Panel Dashboard</strong><br/><sub>FastListTemplate · Reactive Callbacks · Dark Mode · Multi-Currency</sub></td>
+</tr>
+<tr>
+<td align="center">Overview<br/><sub>KPIs · Monthly Charts<br/>Timeseries · Heatmap</sub></td>
+<td align="center">Orientation<br/><sub>Tilt Curves · Hourly<br/>Profiles · Heatmap</sub></td>
+<td align="center">Solar Map<br/><sub>Datashader Render<br/>Click-to-Simulate</sub></td>
+<td align="center">Financial<br/><sub>ROI · Payback · NPV<br/>Carbon Offset</sub></td>
+<td align="center">Multi-Location<br/><sub>City Ranking<br/>Side-by-Side</sub></td>
+<td align="center">AI Insights<br/><sub>Template Reports<br/>GPT-4o Chat</sub></td>
+</tr>
+<tr>
+<td colspan="6" align="center"><strong>Lumen Pipeline</strong><br/><sub>SolarDataSource → SolarEnergyTransform → hvPlot / HoloViews Views</sub></td>
+</tr>
+<tr>
+<td align="center">Data Loader<br/><sub>NASA POWER<br/>ERA5 · Geocoding<br/>Caching</sub></td>
+<td align="center">Solar Analysis<br/><sub>Seasonal Stats<br/>Daily / Monthly<br/>Distribution</sub></td>
+<td align="center">Energy Estimator<br/><sub>NOCT Derating<br/>Inverter Loss<br/>Degradation</sub></td>
+<td align="center">Orientation Sim<br/><sub>pvlib Transposition<br/>Tilt × Direction<br/>Optimal Finder</sub></td>
+<td align="center">Financial Analyzer<br/><sub>NPV · ROI · Payback<br/>Lifetime Savings<br/>4 Currencies</sub></td>
+<td align="center">AI Engine<br/><sub>Template Reports<br/>GPT-4o-mini Chat<br/>System Context</sub></td>
+</tr>
+<tr>
+<td colspan="6" align="center"><strong>Scientific Data Layer</strong><br/><sub>xarray · numpy · pandas · dask · pvlib</sub></td>
+</tr>
+<tr>
+<td colspan="2" align="center">NASA POWER API<br/><sub>Global · 1°×1° · Daily · Free</sub></td>
+<td colspan="2" align="center">ERA5 Copernicus CDS<br/><sub>Global · 0.25°×0.25° · Hourly</sub></td>
+<td align="center">NetCDF / Zarr<br/><sub>Local Files</sub></td>
+<td align="center">pvlib Clearsky<br/><sub>Ineichen / Perez</sub></td>
+</tr>
+</table>
 
 ## Features
 

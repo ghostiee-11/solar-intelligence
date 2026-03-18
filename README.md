@@ -14,20 +14,20 @@ Built with **xarray** for multidimensional climate data processing, **pvlib** fo
 
 <p>
   <a href="https://panel.holoviz.org/"><img src="https://panel.holoviz.org/_static/logo_horizontal_light_theme.png" alt="Panel" height="40"/></a>&nbsp;&nbsp;
-  <a href="https://lumen.holoviz.org/"><img src="https://lumen.holoviz.org/_static/logo_horizontal_light_theme.png" alt="Lumen" height="40"/></a>&nbsp;&nbsp;
-  <a href="https://hvplot.holoviz.org/"><img src="https://hvplot.holoviz.org/_static/logo_horizontal_light_theme.png" alt="hvPlot" height="40"/></a>&nbsp;&nbsp;
-  <a href="https://holoviews.org/"><img src="https://holoviews.org/_static/logo_horizontal_light_theme.png" alt="HoloViews" height="40"/></a>&nbsp;&nbsp;
-  <a href="https://datashader.org/"><img src="https://datashader.org/_static/logo_horizontal_light_theme.png" alt="Datashader" height="40"/></a>&nbsp;&nbsp;
-  <a href="https://param.holoviz.org/"><img src="https://param.holoviz.org/_static/logo_horizontal_light_theme.png" alt="Param" height="40"/></a>
+  <a href="https://lumen.holoviz.org/"><img src="https://raw.githubusercontent.com/holoviz/lumen/main/docs/assets/logo.png" alt="Lumen" height="40"/></a>&nbsp;&nbsp;
+  <a href="https://hvplot.holoviz.org/"><img src="https://raw.githubusercontent.com/holoviz/hvplot/main/doc/_static/logo_horizontal.png" alt="hvPlot" height="40"/></a>&nbsp;&nbsp;
+  <a href="https://holoviews.org/"><img src="https://raw.githubusercontent.com/holoviz/holoviews/main/doc/_static/logo_horizontal.png" alt="HoloViews" height="40"/></a>&nbsp;&nbsp;
+  <a href="https://datashader.org/"><img src="https://raw.githubusercontent.com/holoviz/datashader/main/doc/_static/logo_horizontal.png" alt="Datashader" height="40"/></a>&nbsp;&nbsp;
+  <a href="https://param.holoviz.org/"><img src="https://raw.githubusercontent.com/holoviz/param/main/doc/_static/logo_horizontal.png" alt="Param" height="40"/></a>
 </p>
 <p>
   <a href="https://xarray.dev/"><img src="https://docs.xarray.dev/en/stable/_static/Xarray_Logo_RGB_Final.svg" alt="xarray" height="35"/></a>&nbsp;&nbsp;&nbsp;
   <a href="https://numpy.org/"><img src="https://numpy.org/images/logo.svg" alt="NumPy" height="35"/></a>&nbsp;&nbsp;&nbsp;
   <a href="https://pandas.pydata.org/"><img src="https://pandas.pydata.org/static/img/pandas_mark.svg" alt="Pandas" height="35"/></a>&nbsp;&nbsp;&nbsp;
-  <a href="https://www.dask.org/"><img src="https://docs.dask.org/en/stable/_images/dask_horizontal_no_pad.svg" alt="Dask" height="35"/></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://www.dask.org/"><img src="https://docs.dask.org/en/stable/_images/dask_horizontal.svg" alt="Dask" height="35"/></a>&nbsp;&nbsp;&nbsp;
   <a href="https://pvlib-python.readthedocs.io/"><img src="https://pvlib-python.readthedocs.io/en/stable/_images/pvlib_logo_horiz.png" alt="pvlib" height="35"/></a>&nbsp;&nbsp;&nbsp;
   <a href="https://www.python.org/"><img src="https://s3.dualstack.us-east-2.amazonaws.com/pythondotorg-assets/media/files/python-logo-only.svg" alt="Python" height="35"/></a>&nbsp;&nbsp;&nbsp;
-  <a href="https://openai.com/"><img src="https://cdn.simpleicons.org/openai/412991" alt="OpenAI" height="30"/></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://openai.com/"><img src="https://upload.wikimedia.org/wikipedia/commons/4/4d/OpenAI_Logo.svg" alt="OpenAI" height="30"/></a>&nbsp;&nbsp;&nbsp;
   <a href="https://power.larc.nasa.gov/"><img src="https://cdn.simpleicons.org/nasa/0033A0" alt="NASA POWER" height="30"/></a>
 </p>
 

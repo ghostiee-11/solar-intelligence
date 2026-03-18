@@ -361,5 +361,3 @@ panel serve src/solar_intelligence/ui/panel_dashboard.py --show --autoreload
 MIT License. See [LICENSE](LICENSE) for details.
 
 ---
-
-Built with the [HoloViz](https://holoviz.org/)

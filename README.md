@@ -10,6 +10,30 @@ Built with **xarray** for multidimensional climate data processing, **pvlib** fo
 [![Panel](https://img.shields.io/badge/Panel-dashboard-F7931E?logo=python&logoColor=white)](https://panel.holoviz.org)
 [![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://docs.astral.sh/ruff/)
 
+### Built With
+
+<p>
+  <a href="https://panel.holoviz.org/"><img src="https://img.shields.io/badge/Panel-F7931E?style=for-the-badge&logo=python&logoColor=white" alt="Panel"/></a>
+  <a href="https://lumen.holoviz.org/"><img src="https://img.shields.io/badge/Lumen-4B8BBE?style=for-the-badge&logo=python&logoColor=white" alt="Lumen"/></a>
+  <a href="https://hvplot.holoviz.org/"><img src="https://img.shields.io/badge/hvPlot-306998?style=for-the-badge&logo=python&logoColor=white" alt="hvPlot"/></a>
+  <a href="https://holoviews.org/"><img src="https://img.shields.io/badge/HoloViews-FFD43B?style=for-the-badge&logo=python&logoColor=black" alt="HoloViews"/></a>
+  <a href="https://datashader.org/"><img src="https://img.shields.io/badge/Datashader-2C2D72?style=for-the-badge&logo=python&logoColor=white" alt="Datashader"/></a>
+  <a href="https://param.holoviz.org/"><img src="https://img.shields.io/badge/Param-8B5CF6?style=for-the-badge&logo=python&logoColor=white" alt="Param"/></a>
+  <br/>
+  <a href="https://xarray.dev/"><img src="https://img.shields.io/badge/xarray-E55B2D?style=for-the-badge&logo=python&logoColor=white" alt="xarray"/></a>
+  <a href="https://numpy.org/"><img src="https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white" alt="NumPy"/></a>
+  <a href="https://pandas.pydata.org/"><img src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white" alt="Pandas"/></a>
+  <a href="https://www.dask.org/"><img src="https://img.shields.io/badge/Dask-FDA061?style=for-the-badge&logo=dask&logoColor=black" alt="Dask"/></a>
+  <a href="https://pvlib-python.readthedocs.io/"><img src="https://img.shields.io/badge/pvlib-FF6F00?style=for-the-badge&logo=solar-panel&logoColor=white" alt="pvlib"/></a>
+  <br/>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/></a>
+  <a href="https://docs.pytest.org/"><img src="https://img.shields.io/badge/pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white" alt="pytest"/></a>
+  <a href="https://docs.astral.sh/ruff/"><img src="https://img.shields.io/badge/Ruff-D7FF64?style=for-the-badge&logo=ruff&logoColor=black" alt="Ruff"/></a>
+  <a href="https://openai.com/"><img src="https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI"/></a>
+  <a href="https://power.larc.nasa.gov/"><img src="https://img.shields.io/badge/NASA%20POWER-0033A0?style=for-the-badge&logo=nasa&logoColor=white" alt="NASA POWER"/></a>
+  <a href="https://cds.climate.copernicus.eu/"><img src="https://img.shields.io/badge/ERA5%20Copernicus-003DA5?style=for-the-badge&logo=copernicus&logoColor=white" alt="ERA5"/></a>
+</p>
+
 ---
 
 ## Dashboard Preview
@@ -338,4 +362,4 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-Built with the [HoloViz](https://holoviz.org/) ecosystem for [GSoC 2026](https://summerofcode.withgoogle.com/).
+Built with the [HoloViz](https://holoviz.org/)

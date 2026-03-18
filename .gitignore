@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.tox/
+
+# Data & cache
+data/cache/
+*.nc
+*.hdf5
+*.h5
+*.zarr/
+
+# Environment & secrets
+.env
+.env.local
+*.key
+
+# Logs
+*.log
+nohup.out
+
+# OS files
+.DS_Store
+Thumbs.db
+._*
+
+# Distribution
+*.whl
+*.tar.gz

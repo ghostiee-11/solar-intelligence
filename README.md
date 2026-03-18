@@ -124,21 +124,47 @@ Built with **xarray** for multidimensional climate data processing, **pvlib** fo
 
 ## Architecture
 
-```
-+-------------------------------------------------------------+
-|                    Panel Dashboard (UI Layer)                 |
-|  Location Input | Simulation Controls | Charts | Maps | AI   |
-+-------------------------------------------------------------+
-|                   Lumen Pipeline Layer                        |
-|  SolarDataSource --> Transforms --> Views                    |
-+----------+----------+--------------+-------------------------+
-| Data     | Solar    | Energy       | Orientation             |
-| Loader   | Analysis | Estimator    | Simulator               |
-| (xarray) | (pvlib)  | (formulas)   | (pvlib+numpy)           |
-+----------+----------+--------------+-------------------------+
-|              Scientific Data Layer                            |
-|  NASA POWER API | ERA5 (CDS) | NetCDF/Zarr | pvlib clearsky  |
-+-------------------------------------------------------------+
+```mermaid
+graph TD
+    subgraph UI["Panel Dashboard"]
+        direction LR
+        W1["Location Input"]
+        W2["Simulation Controls"]
+        W3["Charts & Maps"]
+        W4["AI Chat"]
+    end
+
+    subgraph PIPELINE["Lumen Pipeline Layer"]
+        direction LR
+        SDS["SolarDataSource"] --> TF["Transforms"] --> VW["Views"]
+    end
+
+    subgraph CORE["Core Engine"]
+        direction LR
+        DL["Data Loader\n(xarray)"]
+        SA["Solar Analysis\n(pvlib)"]
+        EE["Energy Estimator\n(formulas)"]
+        OS["Orientation Sim\n(pvlib + numpy)"]
+        FA["Financial Analyzer\n(NPV / ROI)"]
+        AI["AI Engine\n(GPT-4o-mini)"]
+    end
+
+    subgraph DATA["Scientific Data Sources"]
+        direction LR
+        NASA["NASA POWER API"]
+        ERA5["ERA5 / Copernicus CDS"]
+        NC["NetCDF / Zarr"]
+        CS["pvlib Clearsky"]
+    end
+
+    UI --> PIPELINE
+    PIPELINE --> CORE
+    CORE --> DATA
+
+    style UI fill:#F7931E,stroke:#e07800,color:#fff,font-weight:bold
+    style PIPELINE fill:#4B8BBE,stroke:#3a6f99,color:#fff,font-weight:bold
+    style CORE fill:#306998,stroke:#1e4f6e,color:#fff,font-weight:bold
+    style DATA fill:#0033A0,stroke:#002070,color:#fff,font-weight:bold
 ```
 
 ## Features

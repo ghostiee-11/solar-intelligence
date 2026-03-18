@@ -13,25 +13,22 @@ Built with **xarray** for multidimensional climate data processing, **pvlib** fo
 ### Built With
 
 <p>
-  <a href="https://panel.holoviz.org/"><img src="https://img.shields.io/badge/Panel-F7931E?style=for-the-badge&logo=python&logoColor=white" alt="Panel"/></a>
-  <a href="https://lumen.holoviz.org/"><img src="https://img.shields.io/badge/Lumen-4B8BBE?style=for-the-badge&logo=python&logoColor=white" alt="Lumen"/></a>
-  <a href="https://hvplot.holoviz.org/"><img src="https://img.shields.io/badge/hvPlot-306998?style=for-the-badge&logo=python&logoColor=white" alt="hvPlot"/></a>
-  <a href="https://holoviews.org/"><img src="https://img.shields.io/badge/HoloViews-FFD43B?style=for-the-badge&logo=python&logoColor=black" alt="HoloViews"/></a>
-  <a href="https://datashader.org/"><img src="https://img.shields.io/badge/Datashader-2C2D72?style=for-the-badge&logo=python&logoColor=white" alt="Datashader"/></a>
-  <a href="https://param.holoviz.org/"><img src="https://img.shields.io/badge/Param-8B5CF6?style=for-the-badge&logo=python&logoColor=white" alt="Param"/></a>
-  <br/>
-  <a href="https://xarray.dev/"><img src="https://img.shields.io/badge/xarray-E55B2D?style=for-the-badge&logo=python&logoColor=white" alt="xarray"/></a>
-  <a href="https://numpy.org/"><img src="https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white" alt="NumPy"/></a>
-  <a href="https://pandas.pydata.org/"><img src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white" alt="Pandas"/></a>
-  <a href="https://www.dask.org/"><img src="https://img.shields.io/badge/Dask-FDA061?style=for-the-badge&logo=dask&logoColor=black" alt="Dask"/></a>
-  <a href="https://pvlib-python.readthedocs.io/"><img src="https://img.shields.io/badge/pvlib-FF6F00?style=for-the-badge&logo=solar-panel&logoColor=white" alt="pvlib"/></a>
-  <br/>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/></a>
-  <a href="https://docs.pytest.org/"><img src="https://img.shields.io/badge/pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white" alt="pytest"/></a>
-  <a href="https://docs.astral.sh/ruff/"><img src="https://img.shields.io/badge/Ruff-D7FF64?style=for-the-badge&logo=ruff&logoColor=black" alt="Ruff"/></a>
-  <a href="https://openai.com/"><img src="https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI"/></a>
-  <a href="https://power.larc.nasa.gov/"><img src="https://img.shields.io/badge/NASA%20POWER-0033A0?style=for-the-badge&logo=nasa&logoColor=white" alt="NASA POWER"/></a>
-  <a href="https://cds.climate.copernicus.eu/"><img src="https://img.shields.io/badge/ERA5%20Copernicus-003DA5?style=for-the-badge&logo=copernicus&logoColor=white" alt="ERA5"/></a>
+  <a href="https://panel.holoviz.org/"><img src="https://panel.holoviz.org/_static/logo_horizontal_light_theme.png" alt="Panel" height="40"/></a>&nbsp;&nbsp;
+  <a href="https://lumen.holoviz.org/"><img src="https://lumen.holoviz.org/_static/logo_horizontal_light_theme.png" alt="Lumen" height="40"/></a>&nbsp;&nbsp;
+  <a href="https://hvplot.holoviz.org/"><img src="https://hvplot.holoviz.org/_static/logo_horizontal_light_theme.png" alt="hvPlot" height="40"/></a>&nbsp;&nbsp;
+  <a href="https://holoviews.org/"><img src="https://holoviews.org/_static/logo_horizontal_light_theme.png" alt="HoloViews" height="40"/></a>&nbsp;&nbsp;
+  <a href="https://datashader.org/"><img src="https://datashader.org/_static/logo_horizontal_light_theme.png" alt="Datashader" height="40"/></a>&nbsp;&nbsp;
+  <a href="https://param.holoviz.org/"><img src="https://param.holoviz.org/_static/logo_horizontal_light_theme.png" alt="Param" height="40"/></a>
+</p>
+<p>
+  <a href="https://xarray.dev/"><img src="https://docs.xarray.dev/en/stable/_static/Xarray_Logo_RGB_Final.svg" alt="xarray" height="35"/></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://numpy.org/"><img src="https://numpy.org/images/logo.svg" alt="NumPy" height="35"/></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://pandas.pydata.org/"><img src="https://pandas.pydata.org/static/img/pandas_mark.svg" alt="Pandas" height="35"/></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://www.dask.org/"><img src="https://docs.dask.org/en/stable/_images/dask_horizontal_no_pad.svg" alt="Dask" height="35"/></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://pvlib-python.readthedocs.io/"><img src="https://pvlib-python.readthedocs.io/en/stable/_images/pvlib_logo_horiz.png" alt="pvlib" height="35"/></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://www.python.org/"><img src="https://s3.dualstack.us-east-2.amazonaws.com/pythondotorg-assets/media/files/python-logo-only.svg" alt="Python" height="35"/></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://openai.com/"><img src="https://cdn.simpleicons.org/openai/412991" alt="OpenAI" height="30"/></a>&nbsp;&nbsp;&nbsp;
+  <a href="https://power.larc.nasa.gov/"><img src="https://cdn.simpleicons.org/nasa/0033A0" alt="NASA POWER" height="30"/></a>
 </p>
 
 ---

@@ -204,6 +204,11 @@ class SolarDashboard(param.Parameterized):
             lon = self.location.longitude
             name = self.location.location_name or f"({lat:.2f}, {lon:.2f})"
 
+            if lat == 0.0 and lon == 0.0 and not self.location.location_name:
+                self._status.object = "**Please enter a city name or coordinates first.**"
+                self._notify("Enter a location before analyzing", "warning")
+                return
+
             # 1. Load data
             if self._use_synthetic.value:
                 ds = generate_synthetic_solar_data(lat=lat, lon=lon)
@@ -323,6 +328,7 @@ class SolarDashboard(param.Parameterized):
             self._status.object = "**Network error.** Check your internet connection."
             self._notify("Network error - check internet connection", "error")
         except ValueError as e:
+            logger.exception("Analysis failed with ValueError")
             self._status.object = f"**Invalid input:** {e}"
             self._notify(f"Invalid input: {e}", "error")
         except Exception as e:

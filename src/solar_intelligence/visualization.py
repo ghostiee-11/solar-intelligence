@@ -221,6 +221,10 @@ class SolarVisualizer(param.Parameterized):
         tilt : int
             Tilt angle to compare.
         """
+        available_tilts = sim_df["tilt_deg"].unique()
+        if len(available_tilts) > 0 and tilt not in available_tilts:
+            tilt = int(available_tilts[np.argmin(np.abs(available_tilts - tilt))])
+
         filtered = sim_df[sim_df["tilt_deg"] == tilt].drop_duplicates(
             subset=["direction"]
         )
@@ -726,6 +730,13 @@ class SolarVisualizer(param.Parameterized):
             "South": 180, "South-West": 225, "West": 270, "North-West": 315,
         }
 
+        # Use nearest available tilt if exact match not found
+        available_tilts = sim_df["tilt_deg"].unique()
+        if len(available_tilts) == 0:
+            return hv.Points([]).opts(title="No simulation data")
+        if tilt not in available_tilts:
+            tilt = int(available_tilts[np.argmin(np.abs(available_tilts - tilt))])
+
         filtered = sim_df[sim_df["tilt_deg"] == tilt].drop_duplicates(
             subset=["direction"]
         ).copy()
@@ -904,6 +915,10 @@ class SolarVisualizer(param.Parameterized):
         tuple[hv.Bars, hv.streams.Selection1D]
             Interactive bar chart and selection stream.
         """
+        available_tilts = sim_df["tilt_deg"].unique()
+        if len(available_tilts) > 0 and tilt not in available_tilts:
+            tilt = int(available_tilts[np.argmin(np.abs(available_tilts - tilt))])
+
         filtered = sim_df[sim_df["tilt_deg"] == tilt].drop_duplicates(
             subset=["direction"]
         ).reset_index(drop=True)

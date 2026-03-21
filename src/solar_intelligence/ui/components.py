@@ -14,14 +14,14 @@ class LocationPicker(param.Parameterized):
     """Combined location input widget with geocoding support."""
 
     city = param.String(default="", doc="City name for geocoding")
-    latitude = param.Number(default=28.6139, bounds=(-90, 90))
-    longitude = param.Number(default=77.2090, bounds=(-180, 180))
-    location_name = param.String(default="New Delhi")
+    latitude = param.Number(default=0.0, bounds=(-90, 90))
+    longitude = param.Number(default=0.0, bounds=(-180, 180))
+    location_name = param.String(default="")
 
     def __init__(self, **params):
         super().__init__(**params)
         self._city_input = pn.widgets.TextInput(
-            name="City Name", value=self.city, placeholder="e.g. New Delhi",
+            name="City Name", value=self.city, placeholder="e.g. New York, London, Tokyo",
         )
         self._lat_input = pn.widgets.FloatInput(
             name="Latitude", value=self.latitude, step=0.1, start=-90, end=90,
@@ -119,7 +119,8 @@ class FinancialConfigurator(param.Parameterized):
 
     currency = param.Selector(
         default="INR",
-        objects=["INR", "USD", "EUR", "GBP"],
+        objects=["INR", "USD", "EUR", "GBP", "CNY", "JPY", "AUD", "BRL",
+                 "ZAR", "CAD", "KRW", "AED", "MXN", "SGD"],
         doc="Currency for financial calculations",
     )
     system_cost = param.Number(default=500000, bounds=(1000, 50_000_000))

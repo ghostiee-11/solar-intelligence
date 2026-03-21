@@ -23,6 +23,8 @@ import xarray as xr
 from solar_intelligence.config import (
     CACHE_DIR,
     CACHE_TTL_DAYS,
+    DEFAULT_END_YEAR,
+    DEFAULT_START_YEAR,
     ERA5_CDS_URL,
     ERA5_DATASET_NAME,
     ERA5_SOLAR_VARIABLES,
@@ -56,10 +58,30 @@ def geocode_location(city_name: str) -> tuple[float, float]:
     ValueError
         If the city cannot be geocoded.
     """
+    if not isinstance(city_name, str) or not city_name.strip():
+        raise ValueError("city_name must be a non-empty string")
+
+    from geopy.exc import GeocoderServiceError
     from geopy.geocoders import Nominatim
 
     geolocator = Nominatim(user_agent="solar-intelligence-platform")
-    location = geolocator.geocode(city_name, timeout=10)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            location = geolocator.geocode(city_name, timeout=10)
+            break
+        except (GeocoderServiceError, Exception) as e:
+            if attempt < max_retries - 1:
+                wait = 2 ** attempt
+                logger.warning(
+                    "Nominatim retry %d/%d after %ds: %s",
+                    attempt + 1, max_retries, wait, e,
+                )
+                time.sleep(wait)
+            else:
+                raise ConnectionError(
+                    f"Geocoding service unreachable after {max_retries} attempts: {e}"
+                ) from e
     if location is None:
         raise ValueError(f"Could not geocode location: '{city_name}'")
     return round(location.latitude, 4), round(location.longitude, 4)
@@ -117,8 +139,8 @@ class NASAPowerClient(param.Parameterized):
         self,
         lat: float,
         lon: float,
-        start: str = "20200101",
-        end: str = "20231231",
+        start: str | None = None,
+        end: str | None = None,
     ) -> xr.Dataset:
         """Fetch daily solar data from NASA POWER.
 
@@ -134,29 +156,41 @@ class NASAPowerClient(param.Parameterized):
         xr.Dataset
             Dataset with time dimension and solar radiation variables.
         """
+        if start is None:
+            start = f"{DEFAULT_START_YEAR}0101"
+        if end is None:
+            end = f"{DEFAULT_END_YEAR}1231"
         return self._fetch("daily", lat, lon, start, end)
 
     def fetch_monthly(
         self,
         lat: float,
         lon: float,
-        start: str = "20200101",
-        end: str = "20231231",
+        start: str | None = None,
+        end: str | None = None,
     ) -> xr.Dataset:
         """Fetch monthly-averaged solar data from NASA POWER."""
+        if start is None:
+            start = f"{DEFAULT_START_YEAR}0101"
+        if end is None:
+            end = f"{DEFAULT_END_YEAR}1231"
         return self._fetch("monthly", lat, lon, start, end)
 
     def fetch_hourly(
         self,
         lat: float,
         lon: float,
-        start: str = "20230101",
-        end: str = "20230107",
+        start: str | None = None,
+        end: str | None = None,
     ) -> xr.Dataset:
         """Fetch hourly solar data from NASA POWER.
 
         Note: Hourly data is limited to shorter date ranges (~1 year max).
         """
+        if start is None:
+            start = f"{DEFAULT_END_YEAR}0101"
+        if end is None:
+            end = f"{DEFAULT_END_YEAR}0107"
         return self._fetch("hourly", lat, lon, start, end)
 
     def _fetch(
@@ -182,20 +216,36 @@ class NASAPowerClient(param.Parameterized):
         url = f"{NASA_POWER_BASE_URL}/{temporal}/point"
         params_str = ",".join(self.parameters)
 
-        response = requests.get(
-            url,
-            params={
-                "parameters": params_str,
-                "community": self.community,
-                "longitude": lon,
-                "latitude": lat,
-                "start": start,
-                "end": end,
-                "format": "JSON",
-            },
-            timeout=60,
-        )
-        response.raise_for_status()
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(
+                    url,
+                    params={
+                        "parameters": params_str,
+                        "community": self.community,
+                        "longitude": lon,
+                        "latitude": lat,
+                        "start": start,
+                        "end": end,
+                        "format": "JSON",
+                    },
+                    timeout=60,
+                )
+                response.raise_for_status()
+                break
+            except (requests.ConnectionError, requests.Timeout) as e:
+                if attempt < max_retries - 1:
+                    wait = 2 ** attempt
+                    logger.warning(
+                        "NASA POWER retry %d/%d after %ds: %s",
+                        attempt + 1, max_retries, wait, e,
+                    )
+                    time.sleep(wait)
+                else:
+                    raise ConnectionError(
+                        f"NASA POWER API unreachable after {max_retries} attempts: {e}"
+                    ) from e
 
         data = response.json()
         ds = self._parse_response(data, temporal, lat, lon)
@@ -308,8 +358,8 @@ class DataLoader(param.Parameterized):
         self,
         lat: float,
         lon: float,
-        start_year: int = 2020,
-        end_year: int = 2023,
+        start_year: int = DEFAULT_START_YEAR,
+        end_year: int = DEFAULT_END_YEAR,
         temporal: str = "daily",
     ) -> xr.Dataset:
         """Load solar data from NASA POWER API.
@@ -344,8 +394,8 @@ class DataLoader(param.Parameterized):
         city: str | None = None,
         lat: float | None = None,
         lon: float | None = None,
-        start_year: int = 2020,
-        end_year: int = 2023,
+        start_year: int = DEFAULT_START_YEAR,
+        end_year: int = DEFAULT_END_YEAR,
     ) -> xr.Dataset:
         """Load solar data for a city name or coordinates.
 
@@ -438,8 +488,8 @@ class DataLoader(param.Parameterized):
 def generate_synthetic_solar_data(
     lat: float = 28.6139,
     lon: float = 77.2090,
-    start_year: int = 2020,
-    end_year: int = 2023,
+    start_year: int = DEFAULT_START_YEAR,
+    end_year: int = DEFAULT_END_YEAR,
 ) -> xr.Dataset:
     """Generate realistic synthetic solar data for testing.
 
@@ -697,8 +747,8 @@ class ERA5Client(param.Parameterized):
         self,
         lat: float,
         lon: float,
-        start_year: int = 2023,
-        end_year: int = 2023,
+        start_year: int = DEFAULT_START_YEAR,
+        end_year: int = DEFAULT_END_YEAR,
         area_margin: float = 0.5,
     ) -> xr.Dataset:
         """Fetch daily-aggregated ERA5 solar data from CDS API.
@@ -992,8 +1042,8 @@ class ERA5Client(param.Parameterized):
         self,
         lat: float,
         lon: float,
-        start_year: int = 2023,
-        end_year: int = 2023,
+        start_year: int = DEFAULT_START_YEAR,
+        end_year: int = DEFAULT_END_YEAR,
     ) -> xr.Dataset:
         """Fetch ERA5 data and aggregate to monthly resolution.
 
@@ -1055,8 +1105,8 @@ class DualSourceLoader(param.Parameterized):
         self,
         lat: float,
         lon: float,
-        start_year: int = 2023,
-        end_year: int = 2023,
+        start_year: int = DEFAULT_START_YEAR,
+        end_year: int = DEFAULT_END_YEAR,
     ) -> dict[str, xr.Dataset]:
         """Fetch data from all enabled sources.
 
@@ -1363,8 +1413,8 @@ class ClimateDatasetLoader(param.Parameterized):
 
 def generate_multi_location_data(
     locations: dict[str, tuple[float, float]],
-    start_year: int = 2020,
-    end_year: int = 2023,
+    start_year: int = DEFAULT_START_YEAR,
+    end_year: int = DEFAULT_END_YEAR,
 ) -> dict[str, xr.Dataset]:
     """Generate synthetic solar data for multiple locations.
 

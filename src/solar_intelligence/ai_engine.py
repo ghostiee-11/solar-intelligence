@@ -21,6 +21,29 @@ from solar_intelligence.config import (
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_APPLIANCE_WATTAGES = {
+    "air_conditioner": 1.5,
+    "central_ac": 3.5,
+    "refrigerator": 0.15,
+    "washing_machine": 0.5,
+    "water_heater": 2.0,
+    "led_light": 0.01,
+    "ceiling_fan": 0.075,
+    "ev_charger_l2": 7.4,
+    "microwave": 1.2,
+    "laptop": 0.065,
+    "television": 0.1,
+}
+
+# Region-specific payback thresholds (years): (excellent, very_good, good, moderate)
+# Default thresholds are used when no country-specific entry exists.
+COUNTRY_PAYBACK_THRESHOLDS: dict[str, tuple[float, float, float, float]] = {
+    "IN": (4, 7, 10, 18),   # India — strong subsidies
+    "US": (5, 8, 12, 20),   # USA — federal ITC
+    "DE": (6, 9, 13, 22),   # Germany — high electricity cost offsets longer payback
+    "AU": (4, 7, 10, 18),   # Australia — high irradiance
+}
+
 
 class SolarAIEngine(param.Parameterized):
     """Generate natural language explanations of solar analysis results.
@@ -36,6 +59,8 @@ class SolarAIEngine(param.Parameterized):
     """
 
     mode = param.Selector(default="template", objects=["template", "llm"])
+    llm_model = param.String(default="gpt-4o-mini", doc="LLM model identifier")
+    country_code = param.String(default="", doc="ISO country code for region-specific thresholds")
 
     def _classify_irradiance(self, ghi: float) -> str:
         """Classify solar resource quality."""
@@ -49,14 +74,23 @@ class SolarAIEngine(param.Parameterized):
             return "low"
 
     def _classify_payback(self, years: float) -> str:
-        """Classify payback period quality."""
-        if years <= 5:
+        """Classify payback period quality.
+
+        Uses country-specific thresholds when ``self.country_code`` matches
+        an entry in ``COUNTRY_PAYBACK_THRESHOLDS``; otherwise falls back to
+        sensible defaults.
+        """
+        code = self.country_code.upper()
+        excellent, very_good, good, moderate = COUNTRY_PAYBACK_THRESHOLDS.get(
+            code, (5, 8, 12, 20),
+        )
+        if years <= excellent:
             return "excellent"
-        elif years <= 8:
+        elif years <= very_good:
             return "very good"
-        elif years <= 12:
+        elif years <= good:
             return "good"
-        elif years <= 20:
+        elif years <= moderate:
             return "moderate"
         else:
             return "poor"
@@ -242,7 +276,7 @@ class SolarAIEngine(param.Parameterized):
         try:
             client = openai.OpenAI()
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=self.llm_model,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=1000,
             )
@@ -299,8 +333,12 @@ class SolarAIEngine(param.Parameterized):
             "- Apply solar energy domain knowledge to give practical, actionable advice.",
             "- For time-of-day questions: peak solar production is 10am-3pm; recommend "
             "  running heavy loads (AC, washing machine, water heater) during these hours.",
-            "- For appliance questions: typical AC = 1.5kW, fridge = 0.15kW, "
-            "  washing machine = 0.5kW, water heater = 2kW, LED lights = 0.01kW each.",
+            "- For appliance questions: typical wattages — "
+            + ", ".join(
+                f"{name.replace('_', ' ')} = {watt}kW"
+                for name, watt in DEFAULT_APPLIANCE_WATTAGES.items()
+            )
+            + ".",
             "- For comparison questions: use the system's actual kWh and financial figures.",
             "- Give specific numbers, not vague generalities.",
             "",
@@ -325,7 +363,7 @@ class SolarAIEngine(param.Parameterized):
         try:
             client = openai.OpenAI()
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=self.llm_model,
                 messages=[
                     {"role": "system", "content": system_msg},
                     {"role": "user", "content": question},

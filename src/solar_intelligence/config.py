@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -109,6 +110,16 @@ CURRENCIES = {
     "USD": {"symbol": "$", "name": "US Dollar", "locale": "en_US"},
     "EUR": {"symbol": "€", "name": "Euro", "locale": "en_EU"},
     "GBP": {"symbol": "£", "name": "British Pound", "locale": "en_GB"},
+    "CNY": {"symbol": "¥", "name": "Chinese Yuan", "locale": "zh_CN"},
+    "JPY": {"symbol": "¥", "name": "Japanese Yen", "locale": "ja_JP"},
+    "AUD": {"symbol": "A$", "name": "Australian Dollar", "locale": "en_AU"},
+    "BRL": {"symbol": "R$", "name": "Brazilian Real", "locale": "pt_BR"},
+    "ZAR": {"symbol": "R", "name": "South African Rand", "locale": "en_ZA"},
+    "CAD": {"symbol": "C$", "name": "Canadian Dollar", "locale": "en_CA"},
+    "KRW": {"symbol": "₩", "name": "South Korean Won", "locale": "ko_KR"},
+    "AED": {"symbol": "د.إ", "name": "UAE Dirham", "locale": "ar_AE"},
+    "MXN": {"symbol": "$", "name": "Mexican Peso", "locale": "es_MX"},
+    "SGD": {"symbol": "S$", "name": "Singapore Dollar", "locale": "en_SG"},
 }
 
 # Defaults per currency
@@ -140,6 +151,76 @@ CURRENCY_DEFAULTS = {
         "maintenance_cost": 120,
         "incentive_percent": 0.00,      # No direct subsidy (SEG payments instead)
         "rate_increase": 0.04,
+    },
+    "CNY": {
+        "system_cost": 35000,           # ~¥35,000 for 3kW system
+        "electricity_rate": 0.55,
+        "maintenance_cost": 800,
+        "incentive_percent": 0.15,
+        "rate_increase": 0.03,
+    },
+    "JPY": {
+        "system_cost": 1050000,         # ~¥1,050,000 for 3kW system
+        "electricity_rate": 30.0,
+        "maintenance_cost": 25000,
+        "incentive_percent": 0.10,
+        "rate_increase": 0.02,
+    },
+    "AUD": {
+        "system_cost": 8000,
+        "electricity_rate": 0.30,
+        "maintenance_cost": 200,
+        "incentive_percent": 0.30,      # SRES rebate
+        "rate_increase": 0.04,
+    },
+    "BRL": {
+        "system_cost": 25000,           # R$25,000 for 3kW system
+        "electricity_rate": 0.80,
+        "maintenance_cost": 500,
+        "incentive_percent": 0.00,
+        "rate_increase": 0.06,
+    },
+    "ZAR": {
+        "system_cost": 90000,           # R90,000 for 3kW system
+        "electricity_rate": 2.50,
+        "maintenance_cost": 2000,
+        "incentive_percent": 0.25,
+        "rate_increase": 0.08,
+    },
+    "CAD": {
+        "system_cost": 12000,
+        "electricity_rate": 0.13,
+        "maintenance_cost": 200,
+        "incentive_percent": 0.25,
+        "rate_increase": 0.03,
+    },
+    "KRW": {
+        "system_cost": 5000000,         # ₩5,000,000 for 3kW system
+        "electricity_rate": 120.0,
+        "maintenance_cost": 100000,
+        "incentive_percent": 0.30,
+        "rate_increase": 0.03,
+    },
+    "AED": {
+        "system_cost": 20000,
+        "electricity_rate": 0.29,
+        "maintenance_cost": 500,
+        "incentive_percent": 0.00,
+        "rate_increase": 0.02,
+    },
+    "MXN": {
+        "system_cost": 120000,          # MX$120,000 for 3kW system
+        "electricity_rate": 1.50,
+        "maintenance_cost": 3000,
+        "incentive_percent": 0.00,
+        "rate_increase": 0.05,
+    },
+    "SGD": {
+        "system_cost": 10000,
+        "electricity_rate": 0.25,
+        "maintenance_cost": 200,
+        "incentive_percent": 0.00,
+        "rate_increase": 0.02,
     },
 }
 
@@ -177,3 +258,236 @@ IRRADIANCE_EXCELLENT = 6.0    # Sahara, Middle East, Australia
 IRRADIANCE_GOOD = 4.5         # Southern US, Mediterranean
 IRRADIANCE_MODERATE = 3.0     # Northern US, Central Europe
 IRRADIANCE_LOW = 1.5          # Scandinavia, UK winter
+
+# ---------------------------------------------------------------------------
+# Country-Specific Carbon Emission Factors (kg CO2 per kWh)
+# Source: IEA Emissions Factors (2023 edition)
+# ---------------------------------------------------------------------------
+COUNTRY_CARBON_FACTORS: dict[str, float] = {
+    "IN": 0.82,   # India
+    "US": 0.42,   # United States
+    "DE": 0.35,   # Germany
+    "FR": 0.06,   # France (nuclear-heavy)
+    "GB": 0.23,   # United Kingdom
+    "CN": 0.58,   # China
+    "JP": 0.47,   # Japan
+    "BR": 0.07,   # Brazil (hydro-heavy)
+    "AU": 0.66,   # Australia
+    "ZA": 0.93,   # South Africa (coal-heavy)
+    "CA": 0.12,   # Canada (hydro-heavy)
+    "IT": 0.33,   # Italy
+    "ES": 0.22,   # Spain
+    "KR": 0.46,   # South Korea
+    "MX": 0.43,   # Mexico
+    "SA": 0.62,   # Saudi Arabia
+    "AE": 0.42,   # UAE
+    "EG": 0.47,   # Egypt
+    "NG": 0.43,   # Nigeria
+    "KE": 0.03,   # Kenya (geothermal-heavy)
+    "TR": 0.41,   # Turkey
+    "TH": 0.49,   # Thailand
+    "ID": 0.72,   # Indonesia
+    "PK": 0.49,   # Pakistan
+    "BD": 0.60,   # Bangladesh
+    "VN": 0.52,   # Vietnam
+    "PH": 0.61,   # Philippines
+    "RU": 0.33,   # Russia
+    "NL": 0.33,   # Netherlands
+    "SE": 0.01,   # Sweden (nuclear + hydro)
+    "NO": 0.01,   # Norway (hydro-heavy)
+    "PL": 0.66,   # Poland (coal-heavy)
+    "AR": 0.31,   # Argentina
+    "CL": 0.35,   # Chile
+    "CO": 0.16,   # Colombia (hydro-heavy)
+}
+
+_DEFAULT_CARBON_FACTOR = 0.42  # World average fallback
+
+
+def get_carbon_factor(country_code: str) -> float:
+    """Return carbon emission factor for a country, with fallback to world average."""
+    return COUNTRY_CARBON_FACTORS.get(country_code.upper(), _DEFAULT_CARBON_FACTOR)
+
+
+# ---------------------------------------------------------------------------
+# Named Constants (replace magic numbers throughout codebase)
+# ---------------------------------------------------------------------------
+PEAK_SUN_HOURS_APPROX = 5.0          # Average peak sun hours per day
+MAX_IRRADIANCE_W_M2 = 1400           # Maximum solar irradiance at Earth surface (W/m2)
+MIN_TEMP_FACTOR = 0.5                # Minimum temperature correction factor
+MAX_TEMP_FACTOR = 1.2                # Maximum temperature correction factor
+NOCT_REFERENCE_IRRADIANCE = 800      # W/m2 — NOCT reference irradiance
+NOCT_REFERENCE_TEMP = 20             # deg C — NOCT reference ambient temperature
+
+# ---------------------------------------------------------------------------
+# Dynamic Date Range (auto-update each year)
+# ---------------------------------------------------------------------------
+
+
+def default_end_year() -> int:
+    """Return the last complete calendar year for data queries."""
+    return datetime.now().year - 1
+
+
+def default_start_year() -> int:
+    """Return 3 years before the end year for a 4-year analysis window."""
+    return default_end_year() - 3
+
+
+DEFAULT_START_YEAR = default_start_year()
+DEFAULT_END_YEAR = default_end_year()
+
+# ---------------------------------------------------------------------------
+# Colorblind-Friendly Palette (Okabe-Ito)
+# ---------------------------------------------------------------------------
+CB_PALETTE = [
+    "#0072B2",  # blue
+    "#E69F00",  # orange
+    "#009E73",  # green
+    "#CC79A7",  # pink
+    "#D55E00",  # vermillion
+    "#56B4E9",  # sky blue
+    "#F0E442",  # yellow
+    "#000000",  # black
+]
+CB_SOLAR_CMAP = "cividis"
+CB_IRRADIANCE_CMAP = "viridis"
+
+# ---------------------------------------------------------------------------
+# Default Appliance Wattages (kW)
+# ---------------------------------------------------------------------------
+DEFAULT_APPLIANCE_WATTAGES: dict[str, float] = {
+    "air_conditioner": 1.5,
+    "central_ac": 3.5,
+    "refrigerator": 0.15,
+    "washing_machine": 0.5,
+    "water_heater": 2.0,
+    "led_light": 0.01,
+    "ceiling_fan": 0.075,
+    "ev_charger_l2": 7.4,
+    "microwave": 1.2,
+    "laptop": 0.065,
+    "television": 0.1,
+    "iron": 1.0,
+    "hair_dryer": 1.5,
+}
+
+# ---------------------------------------------------------------------------
+# Payback Period Thresholds (years) by Region
+# ---------------------------------------------------------------------------
+PAYBACK_THRESHOLDS: dict[str, dict[str, int]] = {
+    "default": {"excellent": 5, "very_good": 8, "good": 12, "moderate": 20},
+    "IN": {"excellent": 4, "very_good": 6, "good": 8, "moderate": 12},
+    "DE": {"excellent": 7, "very_good": 10, "good": 14, "moderate": 20},
+}
+
+# ---------------------------------------------------------------------------
+# Country Profiles (currency, carbon, electricity, subsidies)
+# ---------------------------------------------------------------------------
+COUNTRY_PROFILES: dict[str, dict] = {
+    "IN": {
+        "default_currency": "INR",
+        "carbon_factor": 0.82,
+        "electricity_rate": 8.0,
+        "subsidy_percent": 0.40,
+        "subsidy_type": "Central Financial Assistance (MNRE)",
+    },
+    "US": {
+        "default_currency": "USD",
+        "carbon_factor": 0.42,
+        "electricity_rate": 0.12,
+        "subsidy_percent": 0.30,
+        "subsidy_type": "Investment Tax Credit (ITC)",
+    },
+    "DE": {
+        "default_currency": "EUR",
+        "carbon_factor": 0.35,
+        "electricity_rate": 0.30,
+        "subsidy_percent": 0.20,
+        "subsidy_type": "Feed-in Tariff (EEG)",
+    },
+    "FR": {
+        "default_currency": "EUR",
+        "carbon_factor": 0.06,
+        "electricity_rate": 0.22,
+        "subsidy_percent": 0.25,
+        "subsidy_type": "Feed-in Premium + Tax Credit",
+    },
+    "GB": {
+        "default_currency": "GBP",
+        "carbon_factor": 0.23,
+        "electricity_rate": 0.28,
+        "subsidy_percent": 0.00,
+        "subsidy_type": "Smart Export Guarantee (SEG)",
+    },
+    "CN": {
+        "default_currency": "CNY",
+        "carbon_factor": 0.58,
+        "electricity_rate": 0.55,
+        "subsidy_percent": 0.15,
+        "subsidy_type": "Provincial Feed-in Tariff",
+    },
+    "JP": {
+        "default_currency": "JPY",
+        "carbon_factor": 0.47,
+        "electricity_rate": 30.0,
+        "subsidy_percent": 0.10,
+        "subsidy_type": "Feed-in Tariff (FIT)",
+    },
+    "BR": {
+        "default_currency": "BRL",
+        "carbon_factor": 0.07,
+        "electricity_rate": 0.80,
+        "subsidy_percent": 0.00,
+        "subsidy_type": "Net Metering",
+    },
+    "AU": {
+        "default_currency": "AUD",
+        "carbon_factor": 0.66,
+        "electricity_rate": 0.30,
+        "subsidy_percent": 0.30,
+        "subsidy_type": "Small-scale Renewable Energy Scheme (SRES)",
+    },
+    "ZA": {
+        "default_currency": "ZAR",
+        "carbon_factor": 0.93,
+        "electricity_rate": 2.50,
+        "subsidy_percent": 0.25,
+        "subsidy_type": "Section 12B Tax Deduction",
+    },
+    "CA": {
+        "default_currency": "CAD",
+        "carbon_factor": 0.12,
+        "electricity_rate": 0.13,
+        "subsidy_percent": 0.25,
+        "subsidy_type": "Canada Greener Homes Grant",
+    },
+    "KR": {
+        "default_currency": "KRW",
+        "carbon_factor": 0.46,
+        "electricity_rate": 120.0,
+        "subsidy_percent": 0.30,
+        "subsidy_type": "Renewable Portfolio Standard (RPS)",
+    },
+    "MX": {
+        "default_currency": "MXN",
+        "carbon_factor": 0.43,
+        "electricity_rate": 1.50,
+        "subsidy_percent": 0.00,
+        "subsidy_type": "Net Metering",
+    },
+    "AE": {
+        "default_currency": "AED",
+        "carbon_factor": 0.42,
+        "electricity_rate": 0.29,
+        "subsidy_percent": 0.00,
+        "subsidy_type": "Shams Dubai Net Metering",
+    },
+    "ES": {
+        "default_currency": "EUR",
+        "carbon_factor": 0.22,
+        "electricity_rate": 0.25,
+        "subsidy_percent": 0.40,
+        "subsidy_type": "EU NextGen Funds + Self-Consumption Bonus",
+    },
+}

@@ -110,7 +110,7 @@ class SolarAnalyzer(param.Parameterized):
                 monthly = self._get_var(var).groupby("time.month").mean()
                 records[label] = monthly.to_pandas()
             except KeyError:
-                pass
+                logger.debug("Variable %s not available, skipping", var)
 
         df = pd.DataFrame(records)
         df.index.name = "month"
@@ -155,17 +155,17 @@ class SolarAnalyzer(param.Parameterized):
                 dni = self._get_var(self.dni_var).where(mask, drop=True)
                 row["DNI_mean"] = float(dni.mean())
             except KeyError:
-                pass
+                logger.debug("Variable %s not available, skipping", self.dni_var)
             try:
                 dhi = self._get_var(self.dhi_var).where(mask, drop=True)
                 row["DHI_mean"] = float(dhi.mean())
             except KeyError:
-                pass
+                logger.debug("Variable %s not available, skipping", self.dhi_var)
             try:
                 temp = self._get_var(self.temp_var).where(mask, drop=True)
                 row["temperature"] = float(temp.mean())
             except KeyError:
-                pass
+                logger.debug("Variable %s not available, skipping", self.temp_var)
             records.append(row)
 
         return pd.DataFrame(records).set_index("season")

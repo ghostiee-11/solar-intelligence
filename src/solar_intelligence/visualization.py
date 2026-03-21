@@ -22,6 +22,14 @@ import pandas as pd
 import param
 from holoviews import streams
 
+from solar_intelligence.config import CB_PALETTE
+
+try:
+    import cartopy.feature as cfeature
+    HAS_CARTOPY = True
+except ImportError:
+    HAS_CARTOPY = False
+
 hv.extension("bokeh")
 
 logger = logging.getLogger(__name__)
@@ -46,7 +54,7 @@ class SolarVisualizer(param.Parameterized):
 
     width = param.Integer(default=700, bounds=(300, 2000))
     height = param.Integer(default=400, bounds=(200, 1200))
-    cmap = param.String(default="YlOrRd")
+    cmap = param.String(default="cividis")
 
     # -------------------------------------------------------------------
     # Irradiance Charts
@@ -81,7 +89,7 @@ class SolarVisualizer(param.Parameterized):
             xlabel="Month", ylabel="Irradiance (kWh/m²/day)",
             width=self.width, height=self.height,
             rot=45, legend="top_right",
-            color=["#FFB900", "#FF6B00", "#4FC3F7"],
+            color=CB_PALETTE[:3],
         )
 
     def daily_irradiance_timeseries(self, daily_df: pd.DataFrame) -> Any:
@@ -196,7 +204,7 @@ class SolarVisualizer(param.Parameterized):
             title="Daily GHI Distribution",
             xlabel="GHI (kWh/m²/day)", ylabel="Frequency",
             width=self.width, height=self.height,
-            color="#FFB900", alpha=0.8,
+            color=CB_PALETTE[1], alpha=0.8,
         )
 
     # -------------------------------------------------------------------
@@ -222,7 +230,7 @@ class SolarVisualizer(param.Parameterized):
             title=f"Annual Energy by Direction (Tilt: {tilt}°)",
             xlabel="Panel Direction", ylabel="Annual Energy (kWh)",
             width=self.width, height=self.height,
-            color="annual_energy_kwh", cmap="YlOrRd",
+            color="annual_energy_kwh", cmap=self.cmap,
             rot=45,
         )
 
@@ -239,7 +247,7 @@ class SolarVisualizer(param.Parameterized):
             title="Energy vs Panel Tilt Angle",
             xlabel="Tilt Angle (°)", ylabel="Annual Energy (kWh)",
             width=self.width, height=self.height,
-            line_width=3, color="#FF6B00",
+            line_width=3, color=CB_PALETTE[4],
             markers=True,
         )
 
@@ -311,7 +319,7 @@ class SolarVisualizer(param.Parameterized):
             title="Monthly Energy Generation Projection",
             xlabel="Month", ylabel="Energy (kWh)",
             width=self.width, height=self.height,
-            color="#4CAF50", alpha=0.7,
+            color=CB_PALETTE[2], alpha=0.7,
             rot=45,
         )
 
@@ -339,6 +347,43 @@ class SolarVisualizer(param.Parameterized):
     # Map Visualizations
     # -------------------------------------------------------------------
 
+    @staticmethod
+    def _add_coastlines_hook(plot, element):
+        """Bokeh plot hook to add coastline MultiLine glyphs directly."""
+        if not HAS_CARTOPY:
+            return
+        from bokeh.models import ColumnDataSource, MultiLine
+
+        def _extract(feature):
+            xs, ys = [], []
+            for geom in feature.geometries():
+                geoms = geom.geoms if hasattr(geom, "geoms") else [geom]
+                for g in geoms:
+                    coords = np.array(g.coords)
+                    if len(coords) > 1:
+                        xs.append(coords[:, 0].tolist())
+                        ys.append(coords[:, 1].tolist())
+            return xs, ys
+
+        fig = plot.state
+        # Coastlines
+        cxs, cys = _extract(cfeature.COASTLINE)
+        coast_src = ColumnDataSource(data={"xs": cxs, "ys": cys})
+        coast_glyph = MultiLine(xs="xs", ys="ys", line_color="white",
+                                line_width=1.0, line_alpha=0.8)
+        fig.add_glyph(coast_src, coast_glyph)
+        # Borders
+        bxs, bys = _extract(cfeature.BORDERS)
+        border_src = ColumnDataSource(data={"xs": bxs, "ys": bys})
+        border_glyph = MultiLine(xs="xs", ys="ys", line_color="gray",
+                                 line_width=0.4, line_alpha=0.5,
+                                 line_dash="dotted")
+        fig.add_glyph(border_src, border_glyph)
+
+    def _coastline_overlay(self):
+        """No-op; coastlines are added via Bokeh hook instead."""
+        return hv.Overlay([])
+
     def global_solar_map(
         self,
         lat_grid: np.ndarray,
@@ -358,28 +403,26 @@ class SolarVisualizer(param.Parameterized):
         ghi_grid : 2D array
             GHI values (lat × lon).
         """
-        import datashader as ds
-
         bounds = (
             float(lon_grid.min()), float(lat_grid.min()),
             float(lon_grid.max()), float(lat_grid.max()),
         )
-
+        hooks = [self._add_coastlines_hook] if HAS_CARTOPY else []
         img = hv.Image(
             ghi_grid,
             bounds=bounds,
             kdims=["Longitude", "Latitude"],
             vdims=["GHI (kWh/m²/day)"],
-        )
-
-        return img.opts(
+        ).opts(
             cmap="inferno",
             colorbar=True,
             width=self.width + 200,
             height=self.height + 100,
             title="Global Solar Irradiance Map",
             tools=["hover"],
+            hooks=hooks,
         )
+        return img
 
     def location_marker(self, lat: float, lon: float, label: str = "") -> hv.Points:
         """Create a location marker overlay for maps.
@@ -421,7 +464,7 @@ class SolarVisualizer(param.Parameterized):
             title="Solar Investment Payback Timeline",
             xlabel="Year", ylabel=f"Cumulative Net Savings ({currency_symbol})",
             width=self.width, height=self.height,
-            line_width=3, color="#4CAF50",
+            line_width=3, color=CB_PALETTE[2],
         ).opts(
             # Add horizontal line at y=0
         ) * hv.HLine(0).opts(color="gray", line_dash="dashed", line_width=1)
@@ -439,7 +482,7 @@ class SolarVisualizer(param.Parameterized):
             title="Annual Carbon Offset",
             xlabel="Year", ylabel="CO₂ Avoided (kg)",
             width=self.width, height=self.height,
-            color="#2E7D32", alpha=0.8,
+            color=CB_PALETTE[2], alpha=0.8,
         )
 
     # -------------------------------------------------------------------
@@ -517,30 +560,27 @@ class SolarVisualizer(param.Parameterized):
         hv.Image
             Rasterized image suitable for embedding in Panel dashboards.
         """
-        import datashader as ds_lib
-        from datashader import reductions as rd
-
         data = ds[ghi_var]
         lats = data.coords[data.dims[0]].values
         lons = data.coords[data.dims[1]].values
         values = data.values
 
-        # Use hv.Image for the rendering pipeline
         bounds = (float(lons.min()), float(lats.min()),
                   float(lons.max()), float(lats.max()))
-
         img = hv.Image(
             values, bounds=bounds,
             kdims=["Longitude", "Latitude"],
             vdims=["GHI (kWh/m\u00b2/day)"],
-        )
-
-        return img.opts(
+        ).opts(
             cmap="inferno", colorbar=True,
             width=self.width + 200, height=self.height + 100,
             title="Global Solar Irradiance (Datashader)",
             tools=["hover", "wheel_zoom", "pan", "reset"],
         )
+
+        if HAS_CARTOPY:
+            return img * self._coastline_overlay()
+        return img
 
     def datashader_point_density(
         self,
@@ -616,7 +656,7 @@ class SolarVisualizer(param.Parameterized):
             title="Annual Solar Energy by Location",
             xlabel="Location", ylabel="Annual Energy (kWh/m\u00b2/year)",
             width=self.width, height=self.height,
-            color="annual_kwh_m2", cmap="YlOrRd",
+            color="annual_kwh_m2", cmap=self.cmap,
             rot=45,
         )
 
@@ -717,7 +757,7 @@ class SolarVisualizer(param.Parameterized):
             df, kdims=["x", "y"],
             vdims=["direction", "energy_kwh"],
         ).opts(
-            size=15, color="energy_kwh", cmap="YlOrRd",
+            size=15, color="energy_kwh", cmap=self.cmap,
             colorbar=True, tools=["hover"],
             width=self.height + 50, height=self.height + 50,
             title=f"Energy by Direction (Tilt: {tilt}°)",
@@ -776,7 +816,6 @@ class SolarVisualizer(param.Parameterized):
             float(lon_grid.min()), float(lat_grid.min()),
             float(lon_grid.max()), float(lat_grid.max()),
         )
-
         base_map = hv.Image(
             ghi_grid, bounds=bounds,
             kdims=["Longitude", "Latitude"],
@@ -805,7 +844,11 @@ class SolarVisualizer(param.Parameterized):
             )
 
         marker_dmap = hv.DynamicMap(tap_marker, streams=[tap_stream])
-        return base_map * marker_dmap, tap_stream
+        if HAS_CARTOPY:
+            result = base_map * self._coastline_overlay() * marker_dmap
+        else:
+            result = base_map * marker_dmap
+        return result, tap_stream
 
     def interactive_timeseries_with_range(
         self,
@@ -871,7 +914,7 @@ class SolarVisualizer(param.Parameterized):
             title=f"Select Orientations to Compare (Tilt: {tilt}°)",
             xlabel="Direction", ylabel="Annual Energy (kWh)",
             width=self.width, height=self.height,
-            color="annual_energy_kwh", cmap="YlOrRd",
+            color="annual_energy_kwh", cmap=self.cmap,
             tools=["tap", "hover"],
         )
 
@@ -953,7 +996,7 @@ class SolarVisualizer(param.Parameterized):
         hv.Overlay
         """
         curves = []
-        colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
+        colors = CB_PALETTE[:4]
         for i, col in enumerate(aligned_df.columns):
             curve = hv.Curve(
                 (aligned_df.index, aligned_df[col]),
@@ -1039,7 +1082,7 @@ class SolarVisualizer(param.Parameterized):
         scatter = hv.Points(
             common, kdims=[src_a, src_b],
         ).opts(
-            size=3, alpha=0.4, color="#1f77b4",
+            size=3, alpha=0.4, color=CB_PALETTE[0],
             width=self.height, height=self.height,
             title=f"GHI Correlation: {src_a} vs {src_b}",
             xlabel=f"{src_a} (kWh/m²/day)",
@@ -1133,7 +1176,7 @@ class SolarVisualizer(param.Parameterized):
                 kdims=["Longitude", "Latitude"],
                 vdims=["GHI"],
             ).opts(
-                cmap="YlOrRd", colorbar=True, alpha=0.6,
+                cmap=self.cmap, colorbar=True, alpha=0.6,
                 width=self.width + 200, height=self.height + 100,
             )
         else:

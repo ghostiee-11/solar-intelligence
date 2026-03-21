@@ -36,6 +36,7 @@ from solar_intelligence.solar_analysis import (
     MultiLocationComparator,
     SolarAnalyzer,
 )
+from solar_intelligence.config import CB_PALETTE, CARBON_FACTOR_KG_PER_KWH
 from solar_intelligence.ui.components import (
     FinancialConfigurator,
     KPICard,
@@ -240,31 +241,41 @@ class SolarDashboard(param.Parameterized):
 
             # 4. Orientation simulation
             self._status.object = "**Simulating panel orientations...**"
+            # Compute latitude-aware tilt range
+            optimal_tilt = int(abs(lat))
+            tilt_min = max(0, optimal_tilt - 20)
+            tilt_max = min(90, optimal_tilt + 25)
+            tilt_angles = sorted(set([0] + list(range(tilt_min, tilt_max + 1, 15)) + [90]))
+
             simulator = OrientationSimulator(
                 latitude=lat, longitude=lon,
                 panel_efficiency=self.panel_config.panel_efficiency,
                 panel_area=estimator.total_area,
                 system_losses=self.panel_config.system_losses,
-                tilt_angles=[0, 15, 30, 45, 60],
+                tilt_angles=tilt_angles,
                 azimuths={
                     "North": 0, "East": 90, "South": 180, "West": 270,
                     "South-East": 135, "South-West": 225,
                 },
             )
 
+            # Use the last full year available in the dataset
+            years = ds.time.dt.year.values
+            last_full_year = int(max(years))
+
             ghi_year = ds["ALLSKY_SFC_SW_DWN"].sel(
-                time=slice("2023-01-01", "2023-12-31"),
+                time=slice(f"{last_full_year}-01-01", f"{last_full_year}-12-31"),
             ).values
             if len(ghi_year) < 365:
                 ghi_year = ds["ALLSKY_SFC_SW_DWN"].values[:365]
 
-            sim_data = simulator.simulate_all_orientations(ghi_year, year=2023)
-            optimal = simulator.optimal_orientation(ghi_year, year=2023)
-            sensitivity = simulator.tilt_sensitivity_analysis(ghi_year, year=2023)
+            sim_data = simulator.simulate_all_orientations(ghi_year, year=last_full_year)
+            optimal = simulator.optimal_orientation(ghi_year, year=last_full_year)
+            sensitivity = simulator.tilt_sensitivity_analysis(ghi_year, year=last_full_year)
             daily_profile = simulator.daily_profile_by_orientation(
-                ghi_year, date="2023-06-21",
+                ghi_year, date=f"{last_full_year}-06-21",
             )
-            seasonal = simulator.seasonal_comparison(ghi_year, year=2023)
+            seasonal = simulator.seasonal_comparison(ghi_year, year=last_full_year)
 
             # 5. Financial analysis
             self._status.object = "**Computing financial projections...**"
@@ -282,7 +293,7 @@ class SolarDashboard(param.Parameterized):
                 self._status.object = "**Fetching ERA5 data...**"
                 try:
                     era5_client = ERA5Client()
-                    era5_ds = era5_client.fetch_daily(lat, lon, 2023, 2023)
+                    era5_ds = era5_client.fetch_daily(lat, lon, last_full_year, last_full_year)
                     dual_datasets["ERA5"] = era5_ds
                     self._notify("ERA5 data loaded", "success")
                 except ImportError:
@@ -308,9 +319,15 @@ class SolarDashboard(param.Parameterized):
             self._status.object = f"Analysis complete for **{name}**"
             self._notify(f"Analysis complete for {name}", "success")
 
+        except ConnectionError as e:
+            self._status.object = "**Network error.** Check your internet connection."
+            self._notify("Network error - check internet connection", "error")
+        except ValueError as e:
+            self._status.object = f"**Invalid input:** {e}"
+            self._notify(f"Invalid input: {e}", "error")
         except Exception as e:
             logger.exception("Analysis failed")
-            self._status.object = f"**Error:** {e}"
+            self._status.object = "**Unexpected error.** Check logs for details."
             self._notify(f"Analysis failed: {e}", "error")
         finally:
             self._loading.value = False
@@ -397,31 +414,31 @@ class SolarDashboard(param.Parameterized):
                 "Daily GHI",
                 f"{solar['average_daily_ghi']:.2f}",
                 "kWh/m\u00b2/day",
-                "#FFB900",
+                CB_PALETTE[1],
             ),
             KPICard.create(
                 "Annual Energy",
                 f"{energy['production']['annual_energy_kwh']:,.0f}",
                 "kWh/year",
-                "#4CAF50",
+                CB_PALETTE[2],
             ),
             KPICard.create(
                 "Capacity Factor",
                 f"{energy['performance']['capacity_factor_pct']:.1f}%",
                 "System efficiency",
-                "#2196F3",
+                CB_PALETTE[5],
             ),
             KPICard.create(
                 "Payback",
                 f"{financial['returns']['payback_years']}",
                 "years",
-                "#FF6B00",
+                CB_PALETTE[4],
             ),
             KPICard.create(
                 "CO\u2082 Offset",
                 f"{financial['environmental']['annual_co2_offset_kg']:,.0f}",
                 "kg/year",
-                "#2E7D32",
+                CB_PALETTE[2],
             ),
         ])
 
@@ -510,41 +527,127 @@ class SolarDashboard(param.Parameterized):
             ),
         ])
 
+    def _build_bokeh_map(self, ghi_grid, lats, lons):
+        """Build a Bokeh figure with heatmap + coastlines rendered directly."""
+        from bokeh.plotting import figure
+        from bokeh.models import LinearColorMapper, ColorBar, BasicTicker
+        from bokeh.palettes import Inferno256
+
+        lon_min, lon_max = float(lons.min()), float(lons.max())
+        lat_min, lat_max = float(lats.min()), float(lats.max())
+
+        mapper = LinearColorMapper(
+            palette=Inferno256,
+            low=float(ghi_grid.min()),
+            high=float(ghi_grid.max()),
+        )
+
+        fig = figure(
+            title="Click to Select Location",
+            x_axis_label="Longitude", y_axis_label="Latitude",
+            x_range=(lon_min, lon_max), y_range=(lat_min, lat_max),
+            width=900, height=500,
+            tools=["pan", "wheel_zoom", "box_zoom", "reset", "tap", "hover"],
+            active_scroll="wheel_zoom",
+        )
+
+        fig.image(
+            image=[ghi_grid], x=lon_min, y=lat_min,
+            dw=lon_max - lon_min, dh=lat_max - lat_min,
+            color_mapper=mapper,
+            level="image",
+        )
+
+        color_bar = ColorBar(
+            color_mapper=mapper, ticker=BasicTicker(),
+            label_standoff=12, border_line_color=None, location=(0, 0),
+            title="GHI (kWh/m²/day)",
+        )
+        fig.add_layout(color_bar, "right")
+
+        # Add coastlines directly using Bokeh plotting API
+        try:
+            import cartopy.feature as cfeature_local
+
+            def _extract(feature):
+                xs, ys = [], []
+                for geom in feature.geometries():
+                    geoms = geom.geoms if hasattr(geom, "geoms") else [geom]
+                    for g in geoms:
+                        c = np.array(g.coords)
+                        if len(c) > 1:
+                            xs.append(c[:, 0].tolist())
+                            ys.append(c[:, 1].tolist())
+                return xs, ys
+
+            cxs, cys = _extract(cfeature_local.COASTLINE)
+            fig.multi_line(
+                cxs, cys,
+                line_color="white", line_width=1.0, line_alpha=0.8,
+                level="overlay",
+            )
+            bxs, bys = _extract(cfeature_local.BORDERS)
+            fig.multi_line(
+                bxs, bys,
+                line_color="gray", line_width=0.4, line_alpha=0.5,
+                line_dash="dotted", level="overlay",
+            )
+        except ImportError:
+            pass
+
+        # Marker for clicked location (initially hidden)
+        from bokeh.models import ColumnDataSource as CDS
+        marker_src = CDS(data={"x": [], "y": []})
+        fig.triangle("x", "y", source=marker_src, size=18, color="red",
+                     line_color="black", line_width=1)
+
+        return fig, marker_src
+
     def _update_map(self, lat, lon, ds, dual_datasets=None):
-        """Update solar map tab with interactive Datashader map and simulation panel."""
+        """Update solar map tab with interactive Bokeh map and simulation panel."""
         self._map_area.clear()
         self._clicked_lat = lat
         self._clicked_lon = lon
 
-        # Generate global grid for Datashader rendering
+        # Generate global grid
         global_ds = generate_global_solar_grid(
             resolution=1.0,
-            lat_range=(lat - 30, lat + 30),
-            lon_range=(lon - 40, lon + 40),
+            lat_range=(-90, 90),
+            lon_range=(-180, 180),
         )
 
-        # Interactive map with tap stream
         ghi_grid = global_ds["GHI"].values
         lats = global_ds.coords["lat"].values
         lons = global_ds.coords["lon"].values
-        interactive_map, tap_stream = self._visualizer.interactive_map_with_tap(
-            lats, lons, ghi_grid,
-        )
 
-        # React to map clicks -- update clicked location
-        def on_tap(x, y):
-            if x != 0 or y != 0:
-                self._clicked_lat = y
-                self._clicked_lon = x
+        # Build Bokeh figure with coastlines baked in
+        bokeh_fig, marker_src = self._build_bokeh_map(ghi_grid, lats, lons)
+        map_pane = pn.pane.Bokeh(bokeh_fig, sizing_mode="stretch_width")
+
+        # Handle tap events via Bokeh callback
+        from bokeh.models import TapTool, CustomJS
+
+        tap_callback = CustomJS(args=dict(source=marker_src), code="""
+            const {x, y} = cb_obj;
+            source.data = {x: [x], y: [y]};
+            source.change.emit();
+        """)
+        bokeh_fig.js_on_event("tap", tap_callback)
+
+        # Python-side tap handling via Panel event
+        def on_map_tap(event):
+            if hasattr(event, "x") and hasattr(event, "y"):
+                self._clicked_lat = event.y
+                self._clicked_lon = event.x
                 self._sim_result_area.clear()
                 self._sim_result_area.append(
                     pn.pane.Markdown(
-                        f"**Selected: ({y:.2f}, {x:.2f})** -- "
+                        f"**Selected: ({event.y:.2f}, {event.x:.2f})** -- "
                         f"Click 'Simulate at Location' to run analysis"
                     )
                 )
 
-        tap_stream.add_subscriber(on_tap)
+        bokeh_fig.on_event("tap", on_map_tap)
 
         # Build GHI annotation from available sources
         ghi_values = {}
@@ -581,7 +684,7 @@ class SolarDashboard(param.Parameterized):
         self._map_area.extend([
             source_info,
             pn.Row(
-                pn.pane.HoloViews(interactive_map, sizing_mode="stretch_width"),
+                map_pane,
                 sim_controls,
             ),
         ])
@@ -652,7 +755,9 @@ class SolarDashboard(param.Parameterized):
 
         try:
             # Generate data for location
-            ds = generate_synthetic_solar_data(lat=lat, lon=lon, start_year=2023, end_year=2023)
+            from solar_intelligence.config import default_end_year
+            sim_year = default_end_year()
+            ds = generate_synthetic_solar_data(lat=lat, lon=lon, start_year=sim_year, end_year=sim_year)
             ghi_year = ds["ALLSKY_SFC_SW_DWN"].values[:365]
             avg_temp = float(ds["T2M"].mean())
 
@@ -666,7 +771,7 @@ class SolarDashboard(param.Parameterized):
                 azimuths={"Selected": azimuth},
             )
 
-            sim_data = simulator.simulate_all_orientations(ghi_year, year=2023)
+            sim_data = simulator.simulate_all_orientations(ghi_year, year=sim_year)
             if not sim_data.empty:
                 energy_kwh = float(sim_data["annual_energy_kwh"].iloc[0])
             else:
@@ -677,7 +782,7 @@ class SolarDashboard(param.Parameterized):
             annual_gen = daily_ghi * 365 * efficiency * n_panels * panel_area * (1 - self.panel_config.system_losses)
             sym = self.financial_config.currency_symbol
             monthly_savings = annual_gen * self.financial_config.electricity_rate / 12
-            co2_offset = annual_gen * 0.42  # kg
+            co2_offset = annual_gen * CARBON_FACTOR_KG_PER_KWH
 
             # Direction name
             dir_names = {0: "North", 45: "NE", 90: "East", 135: "SE",

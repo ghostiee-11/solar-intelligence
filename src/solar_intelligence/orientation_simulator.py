@@ -51,8 +51,8 @@ class OrientationSimulator(param.Parameterized):
         Combined system losses fraction.
     """
 
-    latitude = param.Number(default=28.6139, bounds=(-90, 90))
-    longitude = param.Number(default=77.2090, bounds=(-180, 180))
+    latitude = param.Number(default=0.0, bounds=(-90, 90))
+    longitude = param.Number(default=0.0, bounds=(-180, 180))
     altitude = param.Number(default=0, bounds=(0, 9000))
     tilt_angles = param.List(default=DEFAULT_TILT_ANGLES, item_type=(int, float))
     azimuths = param.Dict(default=ORIENTATIONS)
@@ -68,6 +68,15 @@ class OrientationSimulator(param.Parameterized):
             longitude=self.longitude,
             altitude=self.altitude,
         )
+
+    @staticmethod
+    def smart_tilt_range(latitude: float) -> list[int]:
+        """Generate tilt angles centered around optimal for given latitude."""
+        optimal = int(abs(latitude))
+        tilt_min = max(0, optimal - 20)
+        tilt_max = min(90, optimal + 25)
+        tilts = sorted(set([0] + list(range(tilt_min, tilt_max + 1, 5)) + [90]))
+        return tilts
 
     # -------------------------------------------------------------------
     # Solar Position

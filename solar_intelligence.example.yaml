@@ -1,0 +1,29 @@
+# Solar Intelligence Configuration
+# Copy to solar_intelligence.yaml and customize
+
+# Override default location
+location:
+  latitude: 0.0
+  longitude: 0.0
+  name: ""
+
+# Override financial defaults
+financial:
+  currency: USD
+  system_cost: 15000
+  electricity_rate: 0.12
+  incentive_percent: 0.30
+
+# Override carbon factor (kg CO2/kWh)
+# See config.py COUNTRY_CARBON_FACTORS for country-specific values
+carbon_factor: 0.42
+
+# LLM configuration (optional)
+ai:
+  model: gpt-4o-mini
+  # Set OPENAI_API_KEY environment variable for LLM features
+
+# Data source
+data:
+  use_synthetic: true
+  cache_ttl_days: 30

@@ -27,8 +27,8 @@ class TestLocationPicker:
 
     def test_default_values(self):
         lp = LocationPicker()
-        assert lp.latitude == 28.6139
-        assert lp.longitude == 77.2090
+        assert lp.latitude == 0.0
+        assert lp.longitude == 0.0
 
     def test_custom_coords(self):
         lp = LocationPicker(latitude=40.7, longitude=-74.0, location_name="NYC")

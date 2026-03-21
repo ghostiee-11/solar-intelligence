@@ -41,6 +41,7 @@ dependencies = [
     "dask[complete]>=2024.1",
     "bokeh>=3.3",
     "colorcet>=3.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]

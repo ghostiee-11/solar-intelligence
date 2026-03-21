@@ -190,9 +190,9 @@ class FinancialAnalyzer(param.Parameterized):
                 "year": year,
                 "energy_kwh": round(degraded, 1),
                 "electricity_rate": round(rate, 4),
-                "savings_usd": round(savings, 2),
-                "maintenance_usd": self.maintenance_cost,
-                "net_savings_usd": round(net, 2),
+                "savings": round(savings, 2),
+                "maintenance": self.maintenance_cost,
+                "net_savings": round(net, 2),
                 "cumulative_net_savings": round(cumulative, 2),
                 "carbon_offset_kg": round(carbon, 1),
             })
@@ -252,7 +252,7 @@ class FinancialAnalyzer(param.Parameterized):
             "returns": {
                 "first_year_savings": round(self.annual_savings(annual_energy_kwh, 0), 2),
                 "payback_years": round(payback, 1) if payback != float("inf") else "N/A",
-                "npv_25yr": round(npv, 2),
+                f"npv_{self.system_lifetime}yr": round(npv, 2),
                 "roi_pct": round(roi, 1),
             },
             "environmental": {

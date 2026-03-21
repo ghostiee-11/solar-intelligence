@@ -273,7 +273,7 @@ class TestDatashaderVisualization:
         ds = generate_global_solar_grid(resolution=2.0)
         chart = visualizer.datashader_global_map(ds)
         assert chart is not None
-        assert isinstance(chart, hv.Image)
+        assert isinstance(chart, (hv.Image, hv.Overlay))
 
     def test_datashader_global_map_custom_range(self, visualizer):
         ds = generate_global_solar_grid(
@@ -294,7 +294,7 @@ class TestDatashaderVisualization:
         })
         chart = visualizer.datashader_point_density(df)
         assert chart is not None
-        assert isinstance(chart, hv.Image)
+        assert isinstance(chart, (hv.Image, hv.Overlay))
 
     def test_datashader_million_points(self, visualizer):
         """Test that 1M+ point rendering works without error."""
@@ -302,7 +302,7 @@ class TestDatashaderVisualization:
         total = ds["GHI"].shape[0] * ds["GHI"].shape[1]
         assert total > 500_000  # Should be ~700K+ points
         chart = visualizer.datashader_global_map(ds)
-        assert isinstance(chart, hv.Image)
+        assert isinstance(chart, (hv.Image, hv.Overlay))
 
 
 # ---------------------------------------------------------------------------

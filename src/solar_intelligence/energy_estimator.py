@@ -26,6 +26,23 @@ from solar_intelligence.config import (
     DEFAULT_TEMP_COEFFICIENT,
 )
 
+try:
+    from solar_intelligence.config import (
+        MAX_IRRADIANCE_W_M2,
+        MAX_TEMP_FACTOR,
+        MIN_TEMP_FACTOR,
+        NOCT_REFERENCE_IRRADIANCE,
+        NOCT_REFERENCE_TEMP,
+        PEAK_SUN_HOURS_APPROX,
+    )
+except ImportError:
+    PEAK_SUN_HOURS_APPROX = 5.0
+    MAX_IRRADIANCE_W_M2 = 1400
+    NOCT_REFERENCE_TEMP = 20
+    NOCT_REFERENCE_IRRADIANCE = 800
+    MIN_TEMP_FACTOR = 0.5
+    MAX_TEMP_FACTOR = 1.2
+
 logger = logging.getLogger(__name__)
 
 
@@ -128,10 +145,10 @@ class EnergyEstimator(param.Parameterized):
         # Assume ~5 peak sun hours → daily kWh/m² ≈ peak W/m² / 5
         # More precisely: GHI_W ≈ GHI_daily * 1000 / day_hours
         # For NOCT purposes, use effective irradiance
-        ghi_w = np.asarray(ghi_kwh) * 1000 / 5.0  # approximate peak W/m²
-        ghi_w = np.clip(ghi_w, 0, 1400)
+        ghi_w = np.asarray(ghi_kwh) * 1000 / PEAK_SUN_HOURS_APPROX  # approximate peak W/m²
+        ghi_w = np.clip(ghi_w, 0, MAX_IRRADIANCE_W_M2)
 
-        t_cell = np.asarray(ambient_temp) + (self.noct - 20) * ghi_w / 800
+        t_cell = np.asarray(ambient_temp) + (self.noct - NOCT_REFERENCE_TEMP) * ghi_w / NOCT_REFERENCE_IRRADIANCE
         return t_cell
 
     def temperature_factor(
@@ -155,7 +172,7 @@ class EnergyEstimator(param.Parameterized):
         """
         t_cell = self.cell_temperature(ambient_temp, ghi_kwh)
         factor = 1.0 + self.temp_coefficient * (t_cell - DEFAULT_STC_TEMP)
-        return np.clip(factor, 0.5, 1.2)
+        return np.clip(factor, MIN_TEMP_FACTOR, MAX_TEMP_FACTOR)
 
     # -------------------------------------------------------------------
     # Energy Estimation

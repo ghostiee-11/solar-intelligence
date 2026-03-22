@@ -241,6 +241,10 @@ class TestDashboardSmoke:
         from solar_intelligence.ui.panel_dashboard import SolarDashboard
 
         dashboard = SolarDashboard()
+        # Set a valid location before analysis
+        dashboard.location.latitude = 28.6
+        dashboard.location.longitude = 77.2
+        dashboard.location.location_name = "Delhi"
         # Trigger analysis programmatically
         dashboard._run_analysis()
         # After analysis, KPI row should have content

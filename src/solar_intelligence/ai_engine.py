@@ -45,22 +45,73 @@ COUNTRY_PAYBACK_THRESHOLDS: dict[str, tuple[float, float, float, float]] = {
 }
 
 
+LLM_PROVIDERS = {
+    "openai": {
+        "models": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-nano", "gpt-4.1-mini"],
+        "default": "gpt-4o-mini",
+        "free": False,
+    },
+    "groq": {
+        "models": ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "gemma2-9b-it", "mixtral-8x7b-32768"],
+        "default": "llama-3.3-70b-versatile",
+        "free": True,
+    },
+    "gemini": {
+        "models": ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"],
+        "default": "gemini-2.0-flash",
+        "free": True,
+    },
+}
+
+
+def _create_llm_client(provider: str, api_key: str):
+    """Create an OpenAI-compatible client for the given provider."""
+    import openai
+
+    if provider == "openai":
+        return openai.OpenAI(api_key=api_key)
+    elif provider == "groq":
+        return openai.OpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
+        )
+    elif provider == "gemini":
+        return openai.OpenAI(
+            api_key=api_key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        )
+    else:
+        raise ValueError(f"Unknown provider: {provider}")
+
+
 class SolarAIEngine(param.Parameterized):
     """Generate natural language explanations of solar analysis results.
 
     Operates in two modes:
     1. Template-based (default): Rule-based insights, no API key needed.
-    2. LLM-powered (optional): Uses OpenAI/Anthropic for richer explanations.
+    2. LLM-powered (optional): Uses OpenAI, Groq, or Gemini for richer explanations.
 
     Parameters
     ----------
     mode : str
         "template" or "llm".
+    provider : str
+        LLM provider: "openai", "groq", or "gemini".
+    api_key : str
+        API key for the selected provider.
     """
 
     mode = param.Selector(default="template", objects=["template", "llm"])
+    provider = param.Selector(default="openai", objects=["openai", "groq", "gemini"])
     llm_model = param.String(default="gpt-4o-mini", doc="LLM model identifier")
+    api_key = param.String(default="", doc="API key for LLM provider")
     country_code = param.String(default="", doc="ISO country code for region-specific thresholds")
+
+    def _get_client(self):
+        """Get or create the LLM client for current provider/key."""
+        import openai
+        key = self.api_key or None
+        return _create_llm_client(self.provider, key)
 
     def _classify_irradiance(self, ghi: float) -> str:
         """Classify solar resource quality."""
@@ -274,7 +325,7 @@ class SolarAIEngine(param.Parameterized):
         )
 
         try:
-            client = openai.OpenAI()
+            client = self._get_client()
             response = client.chat.completions.create(
                 model=self.llm_model,
                 messages=[{"role": "user", "content": prompt}],
@@ -361,7 +412,7 @@ class SolarAIEngine(param.Parameterized):
         system_msg = "\n".join(context_parts)
 
         try:
-            client = openai.OpenAI()
+            client = self._get_client()
             response = client.chat.completions.create(
                 model=self.llm_model,
                 messages=[
@@ -374,11 +425,12 @@ class SolarAIEngine(param.Parameterized):
         except Exception as e:
             logger.error("LLM chat failed: %s", e)
             err_str = str(e)
-            if "api_key" in err_str.lower() or "OPENAI_API_KEY" in err_str:
+            if "api_key" in err_str.lower() or "authentication" in err_str.lower():
+                provider = self.provider.capitalize()
                 return (
-                    "**OpenAI API key not configured.** "
-                    "Set the `OPENAI_API_KEY` environment variable to enable AI chat.\n\n"
-                    "The template-based report above works without an API key."
+                    f"**{provider} API key not configured.** "
+                    f"Add your API key in the AI Settings section of the sidebar.\n\n"
+                    f"Free options: Groq (free tier) or Gemini (free tier)."
                 )
             return f"**AI chat error:** {e}"
 

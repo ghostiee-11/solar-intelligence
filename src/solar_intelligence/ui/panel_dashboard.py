@@ -170,8 +170,49 @@ class SolarDashboard(param.Parameterized):
         self._chat_energy = None
         self._chat_financial = None
 
+        # --- AI Settings widgets ---
+        from solar_intelligence.ai_engine import LLM_PROVIDERS
+        self._ai_provider = pn.widgets.Select(
+            name="AI Provider",
+            options={"OpenAI": "openai", "Groq (Free)": "groq", "Gemini (Free)": "gemini"},
+            value="groq", width=250,
+        )
+        self._ai_model = pn.widgets.Select(
+            name="Model",
+            options=LLM_PROVIDERS["groq"]["models"],
+            value=LLM_PROVIDERS["groq"]["default"],
+            width=250,
+        )
+        self._ai_api_key = pn.widgets.PasswordInput(
+            name="API Key",
+            placeholder="Paste your API key here",
+            width=250,
+        )
+        self._ai_provider.param.watch(self._on_provider_change, "value")
+
         # Template reference (set in view())
         self._template = None
+
+    def _on_provider_change(self, event):
+        """Update model list when AI provider changes."""
+        from solar_intelligence.ai_engine import LLM_PROVIDERS
+        provider = event.new
+        info = LLM_PROVIDERS.get(provider, LLM_PROVIDERS["openai"])
+        self._ai_model.options = info["models"]
+        self._ai_model.value = info["default"]
+
+    def _apply_ai_settings(self):
+        """Apply current AI settings to the engine."""
+        provider = self._ai_provider.value
+        model = self._ai_model.value
+        api_key = self._ai_api_key.value.strip()
+        self._ai.provider = provider
+        self._ai.llm_model = model
+        if api_key:
+            self._ai.api_key = api_key
+            self._ai.mode = "llm"
+        else:
+            self._ai.mode = "template"
 
     def _notify(self, message: str, notification_type: str = "info"):
         """Send a notification toast to the UI."""
@@ -911,6 +952,7 @@ class SolarDashboard(param.Parameterized):
     def _update_ai(self, solar, energy, financial, orientation):
         """Update AI insights tab with report and chat interface."""
         self._ai_area.clear()
+        self._apply_ai_settings()
 
         sym = self.financial_config.currency_symbol
         code = self.financial_config.currency
@@ -941,6 +983,15 @@ class SolarDashboard(param.Parameterized):
         def on_chat(event):
             question = chat_input.value.strip()
             if not question:
+                return
+            self._apply_ai_settings()
+            if self._ai.mode != "llm":
+                chat_output.clear()
+                chat_output.append(pn.pane.Markdown(
+                    "**Add an API key in the sidebar under AI Settings to enable chat.**\n\n"
+                    "Free options: [Groq](https://console.groq.com/keys) or "
+                    "[Gemini](https://aistudio.google.com/apikey)"
+                ))
                 return
             chat_output.clear()
             chat_output.append(pn.pane.Markdown("**Thinking...**"))
@@ -995,6 +1046,11 @@ class SolarDashboard(param.Parameterized):
             "### Multi-Location",
             self._compare_cities_input,
             self._compare_btn,
+            pn.layout.Divider(),
+            "### AI Settings",
+            self._ai_provider,
+            self._ai_model,
+            self._ai_api_key,
             pn.layout.Divider(),
             self._theme_toggle,
             self._loading,

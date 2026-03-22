@@ -330,6 +330,27 @@ solar-intelligence/
 | **AI/LLM** | OpenAI (GPT-4o-mini) |
 | **Testing** | pytest (300+ tests) |
 
+## Formula Validation (vs PVWatts v8)
+
+All physics formulas have been cross-validated against [NREL PVWatts v8](https://pvwatts.nrel.gov/) using real NASA POWER API data (2020-2023) for a 3.4 kW DC system (10 panels, 20% efficiency, 14% losses):
+
+| Location | Our GHI | PVWatts GHI | GHI Dev | Our Energy | PVWatts Energy | Energy Dev | Direction |
+|----------|---------|-------------|---------|------------|----------------|------------|-----------|
+| Delhi (28.6N) | 4.73 | 5.20 | -9.1% | 4,181 kWh | 4,900 kWh | -14.7% | South (PASS) |
+| Madrid (40.4N) | 4.68 | 4.80 | -2.5% | 4,284 kWh | 5,200 kWh | -17.6% | South (PASS) |
+| Sydney (33.9S) | 4.59 | 4.60 | -0.3% | 4,193 kWh | 4,700 kWh | -10.8% | North (PASS) |
+
+**Summary:** GHI within 0-9% of PVWatts (avg 4.0%), energy within 11-18% (avg 14.4%), all optimal directions correct including Southern Hemisphere.
+
+**Sources of deviation:** Our model uses the isotropic transposition model (conservative) vs PVWatts' Perez model, and NASA POWER multi-year averages vs PVWatts TMY data. See [`notebooks/validation_pvwatts.ipynb`](notebooks/validation_pvwatts.ipynb) for full analysis with charts.
+
+**Formula references:**
+- Cell temperature: NOCT model (IEC 61215)
+- Diffuse fraction: Erbs, Klein & Duffie (1982)
+- Transposition: pvlib `get_total_irradiance()` (isotropic)
+- Temperature derating: standard PV datasheet formula
+- Energy yield: based on NREL PVWatts methodology
+
 ## Testing
 
 ```bash

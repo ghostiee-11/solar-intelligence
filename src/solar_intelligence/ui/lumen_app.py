@@ -17,6 +17,7 @@ from lumen.pipeline import Pipeline
 from lumen.sources.base import Source
 from lumen.transforms.base import Transform
 
+from solar_intelligence.config import DEFAULT_END_YEAR, DEFAULT_START_YEAR
 from solar_intelligence.data_loader import generate_synthetic_solar_data
 
 logger = logging.getLogger(__name__)
@@ -47,11 +48,11 @@ class SolarDataSource(Source):
 
     source_type = "solar_data"
 
-    latitude = param.Number(default=28.6139, bounds=(-90, 90))
-    longitude = param.Number(default=77.2090, bounds=(-180, 180))
+    latitude = param.Number(default=0.0, bounds=(-90, 90))
+    longitude = param.Number(default=0.0, bounds=(-180, 180))
     use_synthetic = param.Boolean(default=True)
-    start_year = param.Integer(default=2020, bounds=(1981, 2025))
-    end_year = param.Integer(default=2023, bounds=(1981, 2025))
+    start_year = param.Integer(default=DEFAULT_START_YEAR, bounds=(1981, 2025))
+    end_year = param.Integer(default=DEFAULT_END_YEAR, bounds=(1981, 2025))
 
     _dataset = param.Parameter(default=None, precedence=-1)
 
@@ -259,8 +260,8 @@ class AnomalyTransform(Transform):
 
 
 def create_solar_pipeline(
-    latitude: float = 28.6139,
-    longitude: float = 77.2090,
+    latitude: float = 0.0,
+    longitude: float = 0.0,
 ) -> Pipeline:
     """Create a Lumen pipeline for solar data analysis.
 
@@ -292,18 +293,18 @@ def create_solar_pipeline(
 # Lumen YAML Configuration
 # ---------------------------------------------------------------------------
 
-LUMEN_YAML_CONFIG = """
+LUMEN_YAML_CONFIG = f"""
 # Solar Intelligence - Lumen Declarative Pipeline Configuration
 # Usage: lumen serve lumen_config.yaml
 
 sources:
   solar_data:
     type: solar_intelligence.ui.lumen_app.SolarDataSource
-    latitude: 28.6139
-    longitude: 77.2090
+    latitude: 0.0
+    longitude: 0.0
     use_synthetic: true
-    start_year: 2020
-    end_year: 2023
+    start_year: {DEFAULT_START_YEAR}
+    end_year: {DEFAULT_END_YEAR}
 
 pipelines:
   daily_analysis:
@@ -333,8 +334,8 @@ pipelines:
 
 
 def get_lumen_yaml_config(
-    latitude: float = 28.6139,
-    longitude: float = 77.2090,
+    latitude: float = 0.0,
+    longitude: float = 0.0,
     panel_efficiency: float = 0.20,
     num_panels: int = 10,
     panel_area: float = 1.7,
@@ -367,8 +368,8 @@ sources:
     latitude: {latitude}
     longitude: {longitude}
     use_synthetic: true
-    start_year: 2020
-    end_year: 2023
+    start_year: {DEFAULT_START_YEAR}
+    end_year: {DEFAULT_END_YEAR}
 
 pipelines:
   daily_analysis:

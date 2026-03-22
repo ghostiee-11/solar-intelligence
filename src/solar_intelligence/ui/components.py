@@ -17,17 +17,22 @@ class LocationPicker(param.Parameterized):
     latitude = param.Number(default=0.0, bounds=(-90, 90))
     longitude = param.Number(default=0.0, bounds=(-180, 180))
     location_name = param.String(default="")
+    country_code = param.String(default="", doc="ISO country code from geocoding")
 
     def __init__(self, **params):
         super().__init__(**params)
         self._city_input = pn.widgets.TextInput(
-            name="City Name", value=self.city, placeholder="e.g. New York, London, Tokyo",
+            name="City Name", value=self.city,
+            placeholder="e.g. New York, London, Tokyo",
+            description="Type any city name and click Search",
         )
         self._lat_input = pn.widgets.FloatInput(
             name="Latitude", value=self.latitude, step=0.1, start=-90, end=90,
+            description="North (+) / South (-), e.g. 28.6 for Delhi",
         )
         self._lon_input = pn.widgets.FloatInput(
             name="Longitude", value=self.longitude, step=0.1, start=-180, end=180,
+            description="East (+) / West (-), e.g. 77.2 for Delhi",
         )
         self._search_btn = pn.widgets.Button(
             name="Search Location", button_type="primary",
@@ -44,14 +49,30 @@ class LocationPicker(param.Parameterized):
             self._status.object = "*Enter a city name*"
             return
         try:
-            from solar_intelligence.data_loader import geocode_location
-            lat, lon = geocode_location(city)
+            from geopy.geocoders import Nominatim
+            geolocator = Nominatim(user_agent="solar-intelligence-platform")
+            location = geolocator.geocode(city, timeout=10, addressdetails=True)
+            if location is None:
+                self._status.object = f"*Could not find '{city}'*"
+                return
+            lat = round(location.latitude, 4)
+            lon = round(location.longitude, 4)
             self._lat_input.value = lat
             self._lon_input.value = lon
             self.latitude = lat
             self.longitude = lon
             self.location_name = city
-            self._status.object = f"Found: {city} ({lat:.4f}, {lon:.4f})"
+
+            # Extract country code from geocoding result
+            address = location.raw.get("address", {})
+            cc = address.get("country_code", "").upper()
+            self.country_code = cc
+
+            country_name = address.get("country", "")
+            if country_name:
+                self._status.object = f"Found: {city}, {country_name} ({lat}, {lon})"
+            else:
+                self._status.object = f"Found: {city} ({lat}, {lon})"
         except Exception as e:
             self._status.object = f"*Error: {e}*"
 
@@ -63,7 +84,7 @@ class LocationPicker(param.Parameterized):
     def panel(self) -> pn.Column:
         """Return the location picker widget column."""
         return pn.Column(
-            "### Location",
+            "### Where are your solar panels?",
             self._city_input,
             self._search_btn,
             self._lat_input,
@@ -91,24 +112,24 @@ class PanelConfigurator(param.Parameterized):
     def panel(self) -> pn.Column:
         """Return the panel configuration widget column."""
         return pn.Column(
-            "### Panel Configuration",
+            "### Your Solar Panels",
             pn.widgets.FloatSlider.from_param(
-                self.param.panel_efficiency, name="Efficiency", format="0.0%",
+                self.param.panel_efficiency, name="Panel Efficiency", format="0.0%",
             ),
             pn.widgets.FloatInput.from_param(
-                self.param.panel_area, name="Panel Area (m²)",
+                self.param.panel_area, name="Panel Size (m²)",
             ),
             pn.widgets.IntSlider.from_param(
-                self.param.num_panels, name="Number of Panels",
+                self.param.num_panels, name="How Many Panels?",
             ),
             pn.widgets.FloatSlider.from_param(
                 self.param.system_losses, name="System Losses", format="0.0%",
             ),
             pn.widgets.FloatSlider.from_param(
-                self.param.tilt_angle, name="Tilt Angle (°)",
+                self.param.tilt_angle, name="Roof Tilt (°)",
             ),
             pn.widgets.Select.from_param(
-                self.param.direction, name="Panel Direction",
+                self.param.direction, name="Panels Facing",
             ),
             width=260,
         )
@@ -129,9 +150,10 @@ class FinancialConfigurator(param.Parameterized):
 
     def __init__(self, **params):
         super().__init__(**params)
-        from solar_intelligence.config import CURRENCIES, CURRENCY_DEFAULTS
+        from solar_intelligence.config import CURRENCIES, CURRENCY_DEFAULTS, COUNTRY_PROFILES
         self._currencies = CURRENCIES
         self._currency_defaults = CURRENCY_DEFAULTS
+        self._country_profiles = COUNTRY_PROFILES
         # Apply defaults for initial currency
         self._apply_currency_defaults(self.currency)
 
@@ -142,6 +164,20 @@ class FinancialConfigurator(param.Parameterized):
             self.system_cost = defaults["system_cost"]
             self.electricity_rate = defaults["electricity_rate"]
             self.incentive_percent = defaults["incentive_percent"]
+
+    def apply_country(self, country_code: str):
+        """Auto-set currency and financial defaults from a country code."""
+        profile = self._country_profiles.get(country_code, {})
+        if profile:
+            cur = profile.get("default_currency", self.currency)
+            if cur in [o for o in self.param.currency.objects]:
+                self.currency = cur
+            self._apply_currency_defaults(cur)
+            # Override with country-specific values if available
+            if "electricity_rate" in profile:
+                self.electricity_rate = profile["electricity_rate"]
+            if "subsidy_percent" in profile:
+                self.incentive_percent = profile["subsidy_percent"]
 
     @property
     def currency_symbol(self) -> str:
@@ -177,7 +213,7 @@ class FinancialConfigurator(param.Parameterized):
         currency_select.param.watch(on_currency_change, "value")
 
         return pn.Column(
-            "### Financial Parameters",
+            "### Costs & Savings",
             currency_select,
             cost_input,
             rate_input,

@@ -36,7 +36,10 @@ from solar_intelligence.solar_analysis import (
     MultiLocationComparator,
     SolarAnalyzer,
 )
-from solar_intelligence.config import CB_PALETTE, CARBON_FACTOR_KG_PER_KWH
+from solar_intelligence.config import (
+    CB_PALETTE, CARBON_FACTOR_KG_PER_KWH, COUNTRY_PROFILES,
+    CURRENCY_DEFAULTS, get_carbon_factor,
+)
 from solar_intelligence.ui.components import (
     FinancialConfigurator,
     KPICard,
@@ -84,6 +87,9 @@ class SolarDashboard(param.Parameterized):
         self._visualizer = SolarVisualizer()
         self._ai = SolarAIEngine()
 
+        # Auto-set currency when country is detected from geocoding
+        self.location.param.watch(self._on_country_detected, "country_code")
+
         # --- Control widgets ---
         self._analyze_btn = pn.widgets.Button(
             name="Analyze Solar Potential", button_type="success", width=250,
@@ -91,10 +97,10 @@ class SolarDashboard(param.Parameterized):
         self._analyze_btn.on_click(self._run_analysis)
 
         self._use_synthetic = pn.widgets.Toggle(
-            name="Use Synthetic Data (Offline)", value=True, width=250,
+            name="Use Demo Data (no internet needed)", value=True, width=250,
         )
         self._use_era5 = pn.widgets.Toggle(
-            name="Enable ERA5 (CDS API)", value=False, width=250,
+            name="Add ERA5 satellite data", value=False, width=250,
         )
 
         self._theme_toggle = pn.widgets.Toggle(
@@ -106,30 +112,55 @@ class SolarDashboard(param.Parameterized):
         self._status = pn.pane.Markdown("*Click 'Analyze' to start*")
         self._loading = pn.indicators.LoadingSpinner(value=False, size=30)
 
+        # --- Welcome banner ---
+        self._welcome = pn.pane.HTML("""
+        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                    border-radius: 12px; padding: 24px; color: white; margin-bottom: 16px;">
+            <h2 style="margin: 0 0 8px 0; color: #FFB900;">Welcome to Solar Intelligence</h2>
+            <p style="margin: 0 0 12px 0; opacity: 0.9; font-size: 15px;">
+                Find out if solar panels are worth it for your location in 3 simple steps:
+            </p>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; flex: 1; min-width: 150px;">
+                    <div style="font-size: 24px;">1.</div>
+                    <div style="font-size: 13px;">Enter your <b>city name</b> in the sidebar</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; flex: 1; min-width: 150px;">
+                    <div style="font-size: 24px;">2.</div>
+                    <div style="font-size: 13px;">Adjust <b>panel count</b> and <b>budget</b></div>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; flex: 1; min-width: 150px;">
+                    <div style="font-size: 24px;">3.</div>
+                    <div style="font-size: 13px;">Click <b>Analyze Solar Potential</b></div>
+                </div>
+            </div>
+        </div>
+        """)
+
         # --- Output areas ---
         self._kpi_row = pn.Row()
         self._overview_area = pn.Column(
-            pn.pane.Markdown("*Run analysis to see results*"),
+            self._welcome,
         )
         self._orientation_area = pn.Column(
-            pn.pane.Markdown("*Run analysis to see orientation results*"),
+            pn.pane.Markdown("*Enter a location and click Analyze to see which direction your panels should face.*"),
         )
         self._map_area = pn.Column(
-            pn.pane.Markdown("*Run analysis to see solar map*"),
+            pn.pane.Markdown("*Enter a location and click Analyze to explore the global solar map.*"),
         )
         self._financial_area = pn.Column(
-            pn.pane.Markdown("*Run analysis to see financial projections*"),
+            pn.pane.Markdown("*Enter a location and click Analyze to see your payback period and savings.*"),
         )
         self._multi_location_area = pn.Column(
-            pn.pane.Markdown("*Run analysis to enable multi-location comparison*"),
+            pn.pane.Markdown("*Compare solar potential across cities. Enter city names below and click Compare.*"),
         )
         self._ai_area = pn.Column(
-            pn.pane.Markdown("*Run analysis to generate AI insights*"),
+            pn.pane.Markdown("*Enter a location and click Analyze to get personalized solar recommendations.*"),
         )
         self._dual_source_area = pn.Column(
             pn.pane.Markdown(
-                "*Enable ERA5 data source and run analysis to see "
-                "cross-validation results*"
+                "*Enable ERA5 data source in the sidebar and run analysis to "
+                "cross-check NASA POWER data with ERA5 satellite data.*"
             ),
         )
 
@@ -200,6 +231,13 @@ class SolarDashboard(param.Parameterized):
         info = LLM_PROVIDERS.get(provider, LLM_PROVIDERS["openai"])
         self._ai_model.options = info["models"]
         self._ai_model.value = info["default"]
+
+    def _on_country_detected(self, event):
+        """Auto-set currency and financial defaults when country is detected."""
+        cc = event.new
+        if cc:
+            self.financial_config.apply_country(cc)
+            self._notify(f"Set defaults for {cc}", "info")
 
     def _apply_ai_settings(self):
         """Apply current AI settings to the engine."""
@@ -323,12 +361,30 @@ class SolarDashboard(param.Parameterized):
             )
             seasonal = simulator.seasonal_comparison(ghi_year, year=last_full_year)
 
-            # 5. Financial analysis
+            # 5. Financial analysis (country-aware)
             self._status.object = "**Computing financial projections...**"
+            cur = self.financial_config.currency
+            currency_defaults = CURRENCY_DEFAULTS.get(cur, {})
+            maintenance = currency_defaults.get("maintenance_cost", 200)
+            rate_increase = currency_defaults.get("rate_increase", 0.03)
+
+            # Use detected country code for carbon factor (more accurate than currency lookup)
+            country_code = self.location.country_code
+            if not country_code:
+                # Fallback: find country from currency
+                for code, profile in COUNTRY_PROFILES.items():
+                    if profile.get("default_currency") == cur:
+                        country_code = code
+                        break
+            carbon = get_carbon_factor(country_code) if country_code else CARBON_FACTOR_KG_PER_KWH
+
             financial = FinancialAnalyzer(
                 system_cost=self.financial_config.system_cost,
                 electricity_rate=self.financial_config.electricity_rate,
                 incentive_percent=self.financial_config.incentive_percent,
+                maintenance_cost=maintenance,
+                rate_increase=rate_increase,
+                carbon_factor=carbon,
             )
             fin_summary = financial.financial_summary(annual_energy)
             lifetime = financial.lifetime_savings(annual_energy)
@@ -829,7 +885,14 @@ class SolarDashboard(param.Parameterized):
             annual_gen = daily_ghi * 365 * efficiency * n_panels * panel_area * (1 - self.panel_config.system_losses)
             sym = self.financial_config.currency_symbol
             monthly_savings = annual_gen * self.financial_config.electricity_rate / 12
-            co2_offset = annual_gen * CARBON_FACTOR_KG_PER_KWH
+            # Use country-aware carbon factor
+            cur = self.financial_config.currency
+            _country = ""
+            for _code, _prof in COUNTRY_PROFILES.items():
+                if _prof.get("default_currency") == cur:
+                    _country = _code
+                    break
+            co2_offset = annual_gen * get_carbon_factor(_country)
 
             # Direction name
             dir_names = {0: "North", 45: "NE", 90: "East", 135: "SE",
@@ -1043,11 +1106,11 @@ class SolarDashboard(param.Parameterized):
             self._use_era5,
             self._analyze_btn,
             pn.layout.Divider(),
-            "### Multi-Location",
+            "### Compare Cities",
             self._compare_cities_input,
             self._compare_btn,
             pn.layout.Divider(),
-            "### AI Settings",
+            "### AI Chat Settings",
             self._ai_provider,
             self._ai_model,
             self._ai_api_key,
@@ -1060,10 +1123,10 @@ class SolarDashboard(param.Parameterized):
 
         tabs = pn.Tabs(
             ("Overview", pn.Column(self._kpi_row, self._overview_area)),
-            ("Orientation Analysis", self._orientation_area),
+            ("Best Direction", self._orientation_area),
             ("Solar Map", self._map_area),
-            ("Financial", self._financial_area),
-            ("Multi-Location", self._multi_location_area),
+            ("Money & Savings", self._financial_area),
+            ("Compare Cities", self._multi_location_area),
             ("Data Sources", self._dual_source_area),
             ("AI Insights", self._ai_area),
             dynamic=True,

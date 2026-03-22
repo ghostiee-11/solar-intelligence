@@ -13,6 +13,7 @@ from typing import Any
 import param
 
 from solar_intelligence.config import (
+    DEFAULT_SYSTEM_LIFETIME,
     IRRADIANCE_EXCELLENT,
     IRRADIANCE_GOOD,
     IRRADIANCE_LOW,
@@ -152,8 +153,8 @@ class SolarAIEngine(param.Parameterized):
         energy_summary: dict[str, Any],
         financial_summary: dict[str, Any],
         orientation_result: dict[str, Any] | None = None,
-        currency_symbol: str = "₹",
-        currency_code: str = "INR",
+        currency_symbol: str = "$",
+        currency_code: str = "USD",
     ) -> str:
         """Generate a comprehensive natural language analysis report.
 
@@ -190,7 +191,7 @@ class SolarAIEngine(param.Parameterized):
         energy: dict,
         financial: dict,
         orientation: dict | None,
-        sym: str = "₹",
+        sym: str = "$",
     ) -> str:
         """Generate template-based analysis report."""
         sections = []
@@ -272,7 +273,7 @@ class SolarAIEngine(param.Parameterized):
             f"**Returns:** First-year savings of "
             f"**{sym}{ret.get('first_year_savings', 0):,.0f}**. "
             f"The investment pays back in **{payback} years** ({payback_quality}). "
-            f"Over {energy.get('system', {}).get('num_panels', 25)} years, "
+            f"Over the system's {DEFAULT_SYSTEM_LIFETIME}-year lifetime, "
             f"the NPV is **{sym}{ret.get('npv_25yr', 0):,.0f}** "
             f"with **{ret.get('roi_pct', 0):.0f}% ROI**."
         )
@@ -295,8 +296,8 @@ class SolarAIEngine(param.Parameterized):
         energy: dict,
         financial: dict,
         orientation: dict | None,
-        currency_symbol: str = "₹",
-        currency_code: str = "INR",
+        currency_symbol: str = "$",
+        currency_code: str = "USD",
     ) -> str:
         """Generate LLM-powered analysis report (requires API key)."""
         try:
@@ -342,8 +343,8 @@ class SolarAIEngine(param.Parameterized):
         solar_summary: dict[str, Any] | None = None,
         energy_summary: dict[str, Any] | None = None,
         financial_summary: dict[str, Any] | None = None,
-        currency_symbol: str = "₹",
-        currency_code: str = "INR",
+        currency_symbol: str = "$",
+        currency_code: str = "USD",
     ) -> str:
         """Answer a user question about the solar analysis using LLM.
 

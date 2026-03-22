@@ -16,7 +16,7 @@ import pvlib
 from pvlib.irradiance import get_total_irradiance
 from pvlib.location import Location
 
-from solar_intelligence.config import DEFAULT_ALBEDO, DEFAULT_TILT_ANGLES, ORIENTATIONS
+from solar_intelligence.config import DEFAULT_ALBEDO, DEFAULT_END_YEAR, DEFAULT_TILT_ANGLES, ORIENTATIONS
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class OrientationSimulator(param.Parameterized):
 
     def solar_position_timeseries(
         self,
-        year: int = 2023,
+        year: int = DEFAULT_END_YEAR,
         freq: str = "h",
     ) -> pd.DataFrame:
         """Compute solar position for every hour of the year.
@@ -261,7 +261,7 @@ class OrientationSimulator(param.Parameterized):
     def simulate_all_orientations(
         self,
         ghi_daily: np.ndarray,
-        year: int = 2023,
+        year: int = DEFAULT_END_YEAR,
     ) -> pd.DataFrame:
         """Simulate energy production for all orientation × tilt combinations.
 
@@ -334,7 +334,7 @@ class OrientationSimulator(param.Parameterized):
     def optimal_orientation(
         self,
         ghi_daily: np.ndarray,
-        year: int = 2023,
+        year: int = DEFAULT_END_YEAR,
     ) -> dict[str, Any]:
         """Find the optimal panel orientation for maximum annual energy.
 
@@ -449,7 +449,7 @@ class OrientationSimulator(param.Parameterized):
         self,
         ghi_daily: np.ndarray,
         azimuth: float = 180,
-        year: int = 2023,
+        year: int = DEFAULT_END_YEAR,
         tilt_range: list[float] | None = None,
     ) -> pd.DataFrame:
         """Analyze energy sensitivity to tilt angle for a fixed azimuth.
@@ -505,7 +505,7 @@ class OrientationSimulator(param.Parameterized):
         ghi_daily: np.ndarray,
         directions: list[str] | None = None,
         tilt: float = 30,
-        year: int = 2023,
+        year: int = DEFAULT_END_YEAR,
     ) -> pd.DataFrame:
         """Compare seasonal energy production across orientations.
 
@@ -554,7 +554,7 @@ class OrientationSimulator(param.Parameterized):
     def simulate_tracking(
         self,
         ghi_daily: np.ndarray,
-        year: int = 2023,
+        year: int = DEFAULT_END_YEAR,
         mode: str = "single_axis",
     ) -> dict[str, Any]:
         """Simulate single-axis or dual-axis solar tracker performance.
@@ -646,7 +646,7 @@ class OrientationSimulator(param.Parameterized):
         self,
         ghi_daily: np.ndarray,
         horizon_profile: dict[float, float] | None = None,
-        year: int = 2023,
+        year: int = DEFAULT_END_YEAR,
     ) -> dict[str, Any]:
         """Estimate energy loss from horizon obstructions.
 
@@ -792,7 +792,7 @@ class OrientationSimulator(param.Parameterized):
         tilt: float = 30,
         bifaciality: float = 0.70,
         height: float = 1.0,
-        year: int = 2023,
+        year: int = DEFAULT_END_YEAR,
     ) -> dict[str, float]:
         """Estimate energy gain from bifacial (double-sided) solar panels.
 
@@ -872,8 +872,8 @@ class RooftopScorer(param.Parameterized):
         Location longitude.
     """
 
-    latitude = param.Number(default=28.6, bounds=(-90, 90))
-    longitude = param.Number(default=77.2, bounds=(-180, 180))
+    latitude = param.Number(default=0.0, bounds=(-90, 90))
+    longitude = param.Number(default=0.0, bounds=(-180, 180))
 
     # Scoring weights
     weight_solar = param.Number(default=0.40, doc="Weight for solar resource quality")

@@ -14,6 +14,8 @@ import pandas as pd
 import param
 import xarray as xr
 
+from solar_intelligence.config import DEFAULT_END_YEAR, DEFAULT_START_YEAR
+
 logger = logging.getLogger(__name__)
 
 # Season mapping for groupby
@@ -412,8 +414,8 @@ class MultiLocationComparator(param.Parameterized):
     def load_data(
         self,
         datasets: dict[str, xr.Dataset] | None = None,
-        start_year: int = 2020,
-        end_year: int = 2023,
+        start_year: int = DEFAULT_START_YEAR,
+        end_year: int = DEFAULT_END_YEAR,
     ) -> None:
         """Load or generate data for all locations.
 
@@ -537,8 +539,8 @@ class DualSourceAnalyzer(param.Parameterized):
     """
 
     datasets = param.Dict(default={}, doc="Source name -> xr.Dataset mapping")
-    latitude = param.Number(default=28.6, bounds=(-90, 90))
-    longitude = param.Number(default=77.2, bounds=(-180, 180))
+    latitude = param.Number(default=0.0, bounds=(-90, 90))
+    longitude = param.Number(default=0.0, bounds=(-180, 180))
 
     _analyzers = param.Dict(default={}, precedence=-1)
 

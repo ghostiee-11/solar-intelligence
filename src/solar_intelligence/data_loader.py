@@ -486,8 +486,8 @@ class DataLoader(param.Parameterized):
 # ---------------------------------------------------------------------------
 
 def generate_synthetic_solar_data(
-    lat: float = 28.6139,
-    lon: float = 77.2090,
+    lat: float = 0.0,
+    lon: float = 0.0,
     start_year: int = DEFAULT_START_YEAR,
     end_year: int = DEFAULT_END_YEAR,
 ) -> xr.Dataset:
